@@ -1,5 +1,7 @@
 # Matrix
 
+> 中文：[matrix.zh-CN.md](matrix.zh-CN.md)
+
 Technical points down the side, pinned repositories across the top. A cell links
 the note that covers that point in that repository. Empty means not read yet —
 the gaps are the backlog.

@@ -1,5 +1,7 @@
 # study/
 
+> 中文：[README.zh-CN.md](README.zh-CN.md)
+
 One directory per pinned target repository: `study/<repo>/`, matching the `name`
 column of `repos/pins.tsv`.
 
@@ -30,3 +32,20 @@ The retry loop is `src/minisweagent/models/litellm_model.py:82`.
 ```
 
 The full anchor syntax is documented in the root `README.md`.
+
+## Chinese and English
+
+A translation sits beside its original with a `.zh-CN` suffix:
+
+```
+study/mini-swe-agent/00-pin-demo.md
+study/mini-swe-agent/00-pin-demo.zh-CN.md
+```
+
+Both are scanned by `make check`, and their anchors are treated alike. **A
+translation is therefore not a second-class copy** -- its anchors have to stand
+on their own, and a line number moved or a hash mistyped in translation fails
+the check.
+
+A translation carries `lang: zh-CN` in its front matter and a link back to the
+original as its first line; the original links forward the same way.

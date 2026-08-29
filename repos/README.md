@@ -1,5 +1,7 @@
 # repos/
 
+> 中文：[README.zh-CN.md](README.zh-CN.md)
+
 Pinned target repositories. Only `pins.tsv` and this file are tracked; every
 `repos/<name>/` checkout is gitignored and rebuilt on demand:
 
@@ -59,3 +61,16 @@ If `sync` fails, it is one of two things:
   `scripts/pin.sh update <name> <ref>`, then re-run `make check` — every note
   written against the old commit will fail until it is re-read, which is the
   intended behaviour.
+
+## Pin record integrity
+
+Beyond fetching and checking out, `sync` verifies two things that are easy to
+miss:
+
+- If the clone's `origin` no longer matches the pin's url (upstream moved), it
+  repoints rather than fetching from the old address forever.
+- If the pinned object is not a commit -- most often an annotated tag, whose
+  *tag object* an earlier `pin.sh add <name> <url> <tag>` would have recorded
+  instead of the commit it points at -- `sync` says so and names the id to
+  record, rather than leaving a phantom state where `status` reads `drifted`
+  forever.

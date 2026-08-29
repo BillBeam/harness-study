@@ -3,6 +3,8 @@ title: how a harness decides a run is over
 status: seeded
 ---
 
+> 中文：[001-control-flow-via-exceptions.zh-CN.md](001-control-flow-via-exceptions.zh-CN.md)
+
 # Control flow: how a run ends
 
 Every agent harness needs an answer to "the run is finished now." The answer is

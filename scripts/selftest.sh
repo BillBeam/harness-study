@@ -113,7 +113,8 @@ declare -a listed=()
 while IFS=$'\t' read -r file want_exit want_codes want_counts || [ -n "$file" ]; do
   case "$file" in ''|\#*) continue ;; esac
   listed+=("$file")
-  if [ ! -f "$ROOT/tests/cases/$file" ]; then
+  # A row may name a directory when the case is about how two files relate.
+  if [ ! -e "$ROOT/tests/cases/$file" ]; then
     bad "$file" "listed in EXPECTED.tsv but the case file is missing"; continue
   fi
   run_case "$file" "$want_exit" "$want_codes" "${want_counts:--}" "$ROOT/tests/cases/$file"

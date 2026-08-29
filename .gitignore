@@ -3,6 +3,7 @@
 /repos/*
 !/repos/pins.tsv
 !/repos/README.md
+!/repos/README.zh-CN.md
 
 # Local scratch
 .venv/

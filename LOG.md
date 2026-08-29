@@ -1,5 +1,7 @@
 # Log
 
+> 中文：[LOG.zh-CN.md](LOG.zh-CN.md)
+
 Newest first. One entry per session: what was pinned or read, and what came out
 of it.
 

@@ -4,6 +4,8 @@ commit: 25941c89cfbc91eb40b3f8756348c91d9977d57e
 title: pinning demo — the shape of the harness
 ---
 
+> 中文：[00-pin-demo.zh-CN.md](00-pin-demo.zh-CN.md)
+
 # mini-swe-agent, pinned
 
 This note exists to prove the scaffold works end to end: a pinned target

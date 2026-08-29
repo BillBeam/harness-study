@@ -1,5 +1,7 @@
 # harness-study
 
+> 中文：[README.zh-CN.md](README.zh-CN.md)
+
 A learning repository for reading other people's agent harnesses closely.
 
 The problem it solves: notes about code rot silently. You write "the retry loop
@@ -36,6 +38,13 @@ reader.
 | `LOG.md` | dated log of what was read and what came of it. |
 | `tests/` | fixtures for the checker itself. Never scanned by `make check`. |
 
+Chinese versions sit beside their English originals with a `.zh-CN` suffix
+(this file's is `README.zh-CN.md`). They go through the same check: a Chinese
+note under `study/` or `points/` has its anchors verified exactly like an
+English one, and a translation must cite exactly what its original cites
+(`translation-drift` otherwise) -- so the pair cannot quietly stop saying the
+same thing.
+
 ## Anchors
 
 An **anchor** is a reference into a target repository that the checker can
@@ -61,6 +70,7 @@ Three shapes are recognised:
 | code anchor, short | `path/to/file.py:97` or `path/to/file.py:97-120` | blob exists at the pinned commit; line(s) in range |
 | code anchor, explicit | `repo@25941c89:path/to/file.py:97` | same, at the named commit |
 | commit reference | `af906e86` (8+ hex) or `repo@af906e86` (7+ hex) | commit is in the clone and is an ancestor of the pin |
+| translation pair | `X.md` and `X.zh-CN.md` | both cite the same set of the above |
 
 Rules worth knowing:
 

@@ -13,6 +13,7 @@ Three things are checked:
   3. commit references     `abcdef12` / `repo@abcdef12`
                            -> the commit exists in the pinned clone and is an
                               ancestor of the pin
+  4. translations          `X.zh-CN.md` cites exactly what `X.md` cites
 
 Only inline code spans (backticks) outside fenced code blocks are scanned, so
 syntax examples inside ``` fences are never mistaken for real anchors.
@@ -34,7 +35,14 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-DEFAULT_TARGETS = ["study", "points", "matrix.md", "LOG.md"]
+# study/ and points/ are scanned recursively, so translations under them are
+# picked up automatically. The root-level files are named one by one, and each
+# translation of one has to be named too -- otherwise its anchors go unchecked.
+DEFAULT_TARGETS = [
+    "study", "points",
+    "matrix.md", "matrix.zh-CN.md",
+    "LOG.md", "LOG.zh-CN.md",
+]
 
 
 class ConfigError(Exception):
@@ -352,6 +360,35 @@ class Problem:
         return f"{where}:{self.lineno}: [{self.code}] {self.message}"
 
 
+def check_translations(arts: list[Artifact]) -> list[Problem]:
+    """A translation and its original must cite the same code.
+
+    `X.zh-CN.md` is a translation of `X.md`. The two are a pair, so they should
+    point at the same places; a reference that exists in one and not the other
+    means they have stopped saying the same thing. Only pairs where BOTH files
+    are in scope are compared.
+    """
+    by_path = {a.file: a for a in arts}
+    problems: list[Problem] = []
+    for art in arts:
+        name = art.file.name
+        if ".zh-CN.md" not in name:
+            continue
+        original = art.file.with_name(name.replace(".zh-CN.md", ".md"))
+        origin_art = by_path.get(original)
+        if origin_art is None:
+            continue
+        here = {r.token for r in art.refs}
+        there = {r.token for r in origin_art.refs}
+        for token in sorted(there - here):
+            problems.append(Problem(art.file, 1, "translation-drift",
+                                    f"`{token}` is cited in {original.name} but not here"))
+        for token in sorted(here - there):
+            problems.append(Problem(art.file, 1, "translation-drift",
+                                    f"`{token}` is cited here but not in {original.name}"))
+    return problems
+
+
 def verify(root: Path, arts: list[Artifact], pins: dict[str, Pin]) -> tuple[list[Problem], int]:
     problems: list[Problem] = []
     clones: dict[str, Clone] = {}
@@ -476,6 +513,7 @@ def main(argv: list[str]) -> int:
     files = collect_files(root, targets)
     arts = [scan(f) for f in files]
     problems, checked = verify(root, arts, pins)
+    problems.extend(check_translations(arts))
 
     if args.json:
         print(json.dumps({
