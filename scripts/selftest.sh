@@ -175,6 +175,24 @@ echo "== pins =="
 if "$ROOT/scripts/pin.sh" status >/dev/null 2>&1; then ok "pin.sh status clean"
 else bad "pin.sh status clean" "run 'make sync'"; fi
 
+# A pin name may legally contain '.', which is a regex metacharacter, so
+# filtering by name has to be a literal comparison. Both directions are asserted
+# here: the filter used to join the wanted names into an alternation regex, which
+# answered `a.b` with the pin `a-b`, and a filter that matched nothing at all
+# would sail through a one-directional test.
+mkdir -p "$TMP/lit/scripts" "$TMP/lit/repos"
+cp "$ROOT/scripts/pin.sh" "$TMP/lit/scripts/pin.sh"
+printf 'a-b\thttps://example.invalid/a-b\t%040d\tliteral-match fixture\n' 0 > "$TMP/lit/repos/pins.tsv"
+miss="$(bash "$TMP/lit/scripts/pin.sh" status 'a.b' 2>&1)"
+hit="$(bash "$TMP/lit/scripts/pin.sh" status 'a-b' 2>&1)"
+if printf '%s' "$miss" | grep -q 'a-b'; then
+  bad "pin.sh matches pin names literally" "status 'a.b' matched the pin 'a-b'"
+elif ! printf '%s' "$hit" | grep -q 'a-b'; then
+  bad "pin.sh matches pin names literally" "status 'a-b' did not match the pin 'a-b'"
+else
+  ok "pin.sh matches pin names literally"
+fi
+
 echo
 printf 'selftest: %d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

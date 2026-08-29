@@ -5,6 +5,8 @@ title: 钉住演示 —— 这个 harness 的骨架
 lang: zh-CN
 ---
 
+执行位示范，先写自己的走查再打开对照，不作论断依据
+
 > 英文版：[00-pin-demo.md](00-pin-demo.md)
 
 # mini-swe-agent，已钉住

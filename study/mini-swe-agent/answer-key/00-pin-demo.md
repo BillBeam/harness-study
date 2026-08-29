@@ -4,6 +4,8 @@ commit: 25941c89cfbc91eb40b3f8756348c91d9977d57e
 title: pinning demo — the shape of the harness
 ---
 
+执行位示范，先写自己的走查再打开对照，不作论断依据
+
 > 中文：[00-pin-demo.zh-CN.md](00-pin-demo.zh-CN.md)
 
 # mini-swe-agent, pinned

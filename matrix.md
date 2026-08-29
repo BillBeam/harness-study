@@ -8,7 +8,7 @@ the gaps are the backlog.
 
 | Point | mini-swe-agent |
 | --- | --- |
-| [001 · control flow: how a run ends](points/001-control-flow-via-exceptions.md) | [00-pin-demo](study/mini-swe-agent/00-pin-demo.md) |
+| [001 · control flow: how a run ends](study/mini-swe-agent/answer-key/001-control-flow-via-exceptions.md) | [00-pin-demo](study/mini-swe-agent/answer-key/00-pin-demo.md) |
 | 002 · budgets and limits | |
 | 003 · environment abstraction | |
 | 004 · config merging and wiring | |

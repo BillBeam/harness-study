@@ -4,6 +4,8 @@ status: seeded
 lang: zh-CN
 ---
 
+执行位示范，先写自己的走查再打开对照，不作论断依据
+
 > 英文版：[001-control-flow-via-exceptions.md](001-control-flow-via-exceptions.md)
 
 # 控制流：一次运行怎么结束
