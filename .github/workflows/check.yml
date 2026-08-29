@@ -1,0 +1,36 @@
+# 每个 PR 与 main 推送都跑一遍：拉取钉住提交、校验锚点、自检校验脚本。任一步失败即红。
+name: 校验定位地图
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: 同步与校验
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出本仓库
+        uses: actions/checkout@v4
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 拉取钉住提交的目标仓库副本
+        run: make sync
+
+      - name: 校验锚点
+        run: make check
+
+      - name: 自检校验脚本
+        run: make selftest
