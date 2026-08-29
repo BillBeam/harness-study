@@ -1,0 +1,12 @@
+# Pinned target repositories.
+# One record per line, TAB-separated. Lines starting with '#' and blank lines are ignored.
+#
+# name<TAB>url<TAB>commit<TAB>note
+#
+# - name   : directory under repos/ and the identifier used in study/ and points/ anchors
+# - url    : clone URL (https only; see repos/README.md for the network-policy rationale)
+# - commit : full 40-hex commit SHA. This is the pin. Anchors resolve against it.
+# - note   : free text, one line
+#
+# Managed by scripts/pin.sh (add / update). Hand-editing is fine; keep the tabs.
+mini-swe-agent	https://github.com/SWE-agent/mini-swe-agent	25941c89cfbc91eb40b3f8756348c91d9977d57e	minimal SWE agent: agent loop / model / environment split

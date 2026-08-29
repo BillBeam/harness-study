@@ -1,0 +1,458 @@
+#!/usr/bin/env python3
+"""Verify every code anchor in the study artifacts against its pinned target repo.
+
+An artifact (a Markdown file under study/ or points/) may reference code in a
+target repository. Those references are *anchors*, and this script proves each
+one still resolves at the commit the repository is pinned to.
+
+Three things are checked:
+
+  1. front matter          `repo:` names a pin, `commit:` equals that pin's commit
+  2. code anchors          `path:line` / `path:line-line` / `repo@commit:path:line`
+                           -> the blob exists at that commit and the line is in range
+  3. commit references     `abcdef12` / `repo@abcdef12`
+                           -> the commit exists in the pinned clone and is an
+                              ancestor of the pin
+
+Only inline code spans (backticks) outside fenced code blocks are scanned, so
+syntax examples inside ``` fences are never mistaken for real anchors.
+
+Exit status: 0 if every anchor resolved (including the case of no anchors at
+all), 1 if any anchor failed, 2 on a usage or configuration error.
+
+Stdlib only. No network access: everything is answered from the local clone.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+from dataclasses import dataclass, field
+from pathlib import Path
+
+DEFAULT_TARGETS = ["study", "points", "matrix.md", "LOG.md"]
+
+# --------------------------------------------------------------------------
+# Anchor grammar
+# --------------------------------------------------------------------------
+#
+#   short form     path/to/file.py:97          repo+commit come from front matter
+#                  path/to/file.py:97-120
+#   explicit form  name@25941c89:path/file.py:97
+#
+# The short form requires the path to contain a "/" or end in a ".ext", so that
+# ordinary prose in backticks is not swept up. A path that fits neither shape
+# (a top-level extensionless file, say) must use the explicit form, which is
+# unambiguous by construction. A token that looks like an anchor but does not
+# resolve is reported as an error rather than silently skipped: a false positive
+# is meant to be loud, and the escape hatch is to drop the backticks.
+_PATH = r"[A-Za-z0-9._][A-Za-z0-9._\-/]*"
+# A short-form path must contain a directory separator, or end in a ".ext"
+# immediately before the ":line". Anchoring the extension on that colon (and
+# not on end-of-token) is what lets `pyproject.toml:1` and `README.md:12`
+# resolve while leaving `localhost:8080` alone.
+_SHORT_PATH = r"(?=[A-Za-z0-9._\-/]*/|[A-Za-z0-9._\-]*\.[A-Za-z0-9]{1,8}:)" + _PATH
+
+ANCHOR_RE = re.compile(
+    rf"""^(?:
+            (?P<xrepo>[A-Za-z0-9._-]+)@(?P<xcommit>[0-9a-fA-F]{{7,40}}):(?P<xpath>{_PATH})
+          |
+            (?P<path>{_SHORT_PATH})
+        )
+        :(?P<line>\d+)(?:-(?P<end>\d+))?$""",
+    re.VERBOSE,
+)
+
+# Bare commit references need 8+ lowercase hex to keep English words out; the
+# explicit `repo@sha` form is unambiguous and accepts git's 7-char minimum.
+COMMIT_RE = re.compile(
+    r"^(?:(?P<repo>[A-Za-z0-9._-]+)@(?P<xsha>[0-9a-fA-F]{7,40})|(?P<sha>[0-9a-f]{8,40}))$"
+)
+
+# Inline code spans: a run of backticks, content, the same run again.
+CODE_SPAN_RE = re.compile(r"(?P<ticks>`+)(?P<body>[^\n]+?)(?P=ticks)")
+FENCE_RE = re.compile(r"^\s{0,3}(?P<fence>`{3,}|~{3,})")
+FRONT_KV_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_-]*)\s*:\s*(.*?)\s*$")
+
+
+# --------------------------------------------------------------------------
+# Pins
+# --------------------------------------------------------------------------
+@dataclass(frozen=True)
+class Pin:
+    name: str
+    url: str
+    commit: str
+    note: str
+
+
+def load_pins(pins_file: Path) -> dict[str, Pin]:
+    if not pins_file.is_file():
+        raise SystemExit(f"check_anchors: missing pins file {pins_file}")
+    pins: dict[str, Pin] = {}
+    for lineno, raw in enumerate(pins_file.read_text(encoding="utf-8").splitlines(), 1):
+        if not raw.strip() or raw.lstrip().startswith("#"):
+            continue
+        parts = raw.split("\t")
+        if len(parts) < 3:
+            raise SystemExit(
+                f"{pins_file}:{lineno}: malformed pin (need name<TAB>url<TAB>commit[<TAB>note])"
+            )
+        name, url, commit = (p.strip() for p in parts[:3])
+        note = parts[3].strip() if len(parts) > 3 else ""
+        if not re.fullmatch(r"[0-9a-f]{40}", commit):
+            raise SystemExit(f"{pins_file}:{lineno}: commit {commit!r} is not a full 40-hex SHA")
+        if name in pins:
+            raise SystemExit(f"{pins_file}:{lineno}: duplicate pin {name!r}")
+        pins[name] = Pin(name, url, commit, note)
+    return pins
+
+
+# --------------------------------------------------------------------------
+# Git access, memoised
+# --------------------------------------------------------------------------
+class Clone:
+    """Read-only queries against one materialised pin."""
+
+    def __init__(self, root: Path, pin: Pin):
+        self.pin = pin
+        self.dir = root / "repos" / pin.name
+        self._lines: dict[tuple[str, str], int | None] = {}
+        self._commits: dict[str, bool] = {}
+        self._ancestor: dict[str, bool] = {}
+
+    @property
+    def present(self) -> bool:
+        return (self.dir / ".git").exists()
+
+    def _git(self, *args: str) -> subprocess.CompletedProcess:
+        return subprocess.run(
+            ["git", "-C", str(self.dir), *args],
+            capture_output=True,
+            check=False,
+        )
+
+    def has_commit(self, sha: str) -> bool:
+        if sha not in self._commits:
+            self._commits[sha] = self._git("cat-file", "-e", f"{sha}^{{commit}}").returncode == 0
+        return self._commits[sha]
+
+    def is_ancestor(self, sha: str) -> bool:
+        """True if sha is reachable from the pinned commit (the pin included)."""
+        if sha not in self._ancestor:
+            self._ancestor[sha] = (
+                self._git("merge-base", "--is-ancestor", sha, self.pin.commit).returncode == 0
+            )
+        return self._ancestor[sha]
+
+    def blob_lines(self, sha: str, path: str) -> int | None:
+        """Line count of the blob at <sha>:<path>, or None if it is not a blob."""
+        key = (sha, path)
+        if key in self._lines:
+            return self._lines[key]
+        spec = f"{sha}:{path}"
+        kind = self._git("cat-file", "-t", spec)
+        if kind.returncode != 0 or kind.stdout.strip() != b"blob":
+            self._lines[key] = None
+            return None
+        blob = self._git("cat-file", "blob", spec)
+        if blob.returncode != 0:
+            self._lines[key] = None
+            return None
+        data = blob.stdout
+        if not data:
+            count = 0
+        else:
+            count = data.count(b"\n") + (0 if data.endswith(b"\n") else 1)
+        self._lines[key] = count
+        return count
+
+
+# --------------------------------------------------------------------------
+# Artifact scanning
+# --------------------------------------------------------------------------
+@dataclass
+class Ref:
+    """One thing to verify, located at file:lineno in the artifact."""
+
+    kind: str  # "anchor" | "commit"
+    file: Path
+    lineno: int
+    token: str
+    repo: str | None = None
+    commit: str | None = None
+    path: str | None = None
+    line: int | None = None
+    end: int | None = None
+
+
+@dataclass
+class Artifact:
+    file: Path
+    repo: str | None = None
+    commit: str | None = None
+    front_lineno: dict[str, int] = field(default_factory=dict)
+    refs: list[Ref] = field(default_factory=list)
+
+
+def parse_front_matter(lines: list[str]) -> tuple[dict[str, str], dict[str, int], int]:
+    """Return (values, lineno-of-each-key, index of first body line)."""
+    if not lines or lines[0].strip() != "---":
+        return {}, {}, 0
+    values: dict[str, str] = {}
+    where: dict[str, int] = {}
+    for i in range(1, len(lines)):
+        if lines[i].strip() == "---":
+            return values, where, i + 1
+        m = FRONT_KV_RE.match(lines[i])
+        if m:
+            key, value = m.group(1).lower(), m.group(2)
+            values[key] = value.strip().strip("'\"")
+            where[key] = i + 1
+    # Unterminated front matter: treat the whole file as body.
+    return {}, {}, 0
+
+
+def scan(file: Path) -> Artifact:
+    # utf-8-sig drops a leading BOM, which would otherwise make line 1 read as
+    # "\ufeff---" and silently cost the file its front matter.
+    text = file.read_text(encoding="utf-8-sig", errors="replace")
+    lines = text.splitlines()
+    front, where, body_start = parse_front_matter(lines)
+    art = Artifact(file=file, repo=front.get("repo") or None, commit=front.get("commit") or None,
+                   front_lineno=where)
+
+    fence: str | None = None
+    for idx in range(body_start, len(lines)):
+        raw = lines[idx]
+        m = FENCE_RE.match(raw)
+        if m:
+            marker = m.group("fence")
+            if fence is None:
+                fence = marker[0] * 3
+                continue
+            if marker[0] == fence[0] and len(marker) >= 3:
+                fence = None
+                continue
+        if fence is not None:
+            continue
+        for span in CODE_SPAN_RE.finditer(raw):
+            token = span.group("body").strip()
+            if not token:
+                continue
+            a = ANCHOR_RE.match(token)
+            if a:
+                art.refs.append(
+                    Ref(
+                        kind="anchor",
+                        file=file,
+                        lineno=idx + 1,
+                        token=token,
+                        repo=a.group("xrepo") or art.repo,
+                        commit=(a.group("xcommit") or "").lower() or None,
+                        path=a.group("xpath") or a.group("path"),
+                        line=int(a.group("line")),
+                        end=int(a.group("end")) if a.group("end") else None,
+                    )
+                )
+                continue
+            c = COMMIT_RE.match(token)
+            if c:
+                art.refs.append(
+                    Ref(
+                        kind="commit",
+                        file=file,
+                        lineno=idx + 1,
+                        token=token,
+                        repo=c.group("repo") or art.repo,
+                        commit=(c.group("xsha") or c.group("sha")).lower(),
+                    )
+                )
+    return art
+
+
+def collect_files(root: Path, targets: list[str]) -> list[Path]:
+    found: list[Path] = []
+    for target in targets:
+        p = (root / target) if not os.path.isabs(target) else Path(target)
+        if p.is_dir():
+            found.extend(sorted(q for q in p.rglob("*.md") if q.is_file()))
+        elif p.is_file():
+            found.append(p)
+        elif not (root / target).exists() and target in DEFAULT_TARGETS:
+            continue  # a default target that does not exist yet is not an error
+        else:
+            raise SystemExit(f"check_anchors: no such path: {target}")
+    # Deduplicate while keeping order.
+    seen: set[Path] = set()
+    return [p for p in found if not (p in seen or seen.add(p))]
+
+
+# --------------------------------------------------------------------------
+# Verification
+# --------------------------------------------------------------------------
+@dataclass
+class Problem:
+    file: Path
+    lineno: int
+    code: str
+    message: str
+
+    def render(self, root: Path) -> str:
+        try:
+            where = self.file.relative_to(root)
+        except ValueError:
+            where = self.file
+        return f"{where}:{self.lineno}: [{self.code}] {self.message}"
+
+
+def verify(root: Path, arts: list[Artifact], pins: dict[str, Pin]) -> tuple[list[Problem], int]:
+    problems: list[Problem] = []
+    clones: dict[str, Clone] = {}
+    checked = 0
+
+    def clone_for(name: str) -> Clone:
+        if name not in clones:
+            clones[name] = Clone(root, pins[name])
+        return clones[name]
+
+    for art in arts:
+        # Front matter is only required once the file actually carries a short-form ref.
+        if art.repo is not None:
+            line = art.front_lineno.get("repo", 1)
+            if art.repo not in pins:
+                problems.append(Problem(art.file, line, "unknown-repo",
+                                        f"front matter repo {art.repo!r} is not pinned in repos/pins.tsv"))
+            elif art.commit is None:
+                problems.append(Problem(art.file, line, "missing-commit",
+                                        f"front matter declares repo {art.repo!r} but no commit:"))
+            elif art.commit.lower() != pins[art.repo].commit:
+                problems.append(Problem(art.file, art.front_lineno.get("commit", line), "stale-commit",
+                                        f"front matter commit {art.commit} != pinned commit "
+                                        f"{pins[art.repo].commit} for {art.repo!r}"))
+
+        for ref in art.refs:
+            checked += 1
+            if ref.repo is None:
+                problems.append(Problem(art.file, ref.lineno, "no-repo",
+                                        f"`{ref.token}` has no repo: add front matter `repo:`/`commit:` "
+                                        f"or write it as `<repo>@<commit>:{ref.path or ref.commit}`"))
+                continue
+            if ref.repo not in pins:
+                problems.append(Problem(art.file, ref.lineno, "unknown-repo",
+                                        f"`{ref.token}` names repo {ref.repo!r}, which is not pinned "
+                                        f"in repos/pins.tsv"))
+                continue
+            pin = pins[ref.repo]
+            clone = clone_for(ref.repo)
+            if not clone.present:
+                problems.append(Problem(art.file, ref.lineno, "repo-absent",
+                                        f"`{ref.token}` needs repos/{ref.repo}/ — run "
+                                        f"`scripts/pin.sh sync {ref.repo}`"))
+                continue
+
+            # Short-form refs always resolve at the pin. Front matter `commit:` is
+            # an assertion that the note was written against the current pin (it is
+            # checked above), not an alternate resolution target -- so a stale note
+            # reports one clear problem instead of a cascade. To point at a
+            # historical commit on purpose, use the explicit `repo@sha:path:line`
+            # form, which is checked to be an ancestor of the pin.
+            sha = (ref.commit or pin.commit).lower()
+            if not clone.has_commit(sha):
+                problems.append(Problem(art.file, ref.lineno, "unknown-commit",
+                                        f"`{ref.token}`: commit {sha} is not in repos/{ref.repo}/ — "
+                                        f"run `scripts/pin.sh sync {ref.repo}` to fetch, or fix the hash"))
+                continue
+            if not clone.is_ancestor(sha):
+                problems.append(Problem(art.file, ref.lineno, "not-ancestor",
+                                        f"`{ref.token}`: commit {sha} is not an ancestor of the pinned "
+                                        f"commit {pin.commit[:12]} — it is outside the pinned history"))
+                continue
+
+            if ref.kind == "commit":
+                continue
+
+            total = clone.blob_lines(sha, ref.path or "")
+            if total is None:
+                problems.append(Problem(art.file, ref.lineno, "no-such-file",
+                                        f"`{ref.token}`: {ref.path} is not a file in {ref.repo} "
+                                        f"at {sha[:12]}"))
+                continue
+            start, end = ref.line or 0, ref.end if ref.end is not None else (ref.line or 0)
+            if ref.end is not None and ref.end < start:
+                problems.append(Problem(art.file, ref.lineno, "bad-range",
+                                        f"`{ref.token}`: end line {ref.end} precedes start line {start}"))
+                continue
+            if start < 1 or end > total:
+                problems.append(Problem(art.file, ref.lineno, "line-out-of-range",
+                                        f"`{ref.token}`: {ref.path} has {total} line(s) at "
+                                        f"{sha[:12]}, so line {end} does not exist"))
+                continue
+
+    return problems, checked
+
+
+# --------------------------------------------------------------------------
+def main(argv: list[str]) -> int:
+    ap = argparse.ArgumentParser(
+        prog="check_anchors.py",
+        description="Verify code anchors in study artifacts against their pinned target repos.",
+    )
+    ap.add_argument("targets", nargs="*", default=None,
+                    help=f"files or directories to scan (default: {' '.join(DEFAULT_TARGETS)})")
+    ap.add_argument("--root", default=None, help="repository root (default: this script's parent)")
+    ap.add_argument("--pins", default=None, help="path to pins.tsv (default: <root>/repos/pins.tsv)")
+    ap.add_argument("-v", "--verbose", action="store_true", help="list every anchor that was checked")
+    ap.add_argument("--json", action="store_true", help="emit a JSON report on stdout")
+    args = ap.parse_args(argv)
+
+    root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parent.parent
+    pins_file = Path(args.pins).resolve() if args.pins else root / "repos" / "pins.tsv"
+    targets = args.targets or DEFAULT_TARGETS
+
+    pins = load_pins(pins_file)
+    files = collect_files(root, targets)
+    arts = [scan(f) for f in files]
+    problems, checked = verify(root, arts, pins)
+
+    if args.json:
+        print(json.dumps({
+            "root": str(root),
+            "files": len(files),
+            "anchors": checked,
+            "problems": [{"file": str(p.file), "line": p.lineno, "code": p.code,
+                          "message": p.message} for p in problems],
+            "ok": not problems,
+        }, indent=2))
+        return 1 if problems else 0
+
+    if args.verbose:
+        for art in arts:
+            rel = art.file.relative_to(root) if art.file.is_relative_to(root) else art.file
+            marks = [f"{r.kind}:{r.token}" for r in art.refs]
+            print(f"  scanned {rel} ({len(art.refs)} ref(s))" + (f": {', '.join(marks)}" if marks else ""))
+
+    for p in problems:
+        print(p.render(root), file=sys.stderr)
+
+    scope = " ".join(targets)
+    if problems:
+        print(f"\ncheck_anchors: FAIL — {len(problems)} problem(s) in {checked} anchor(s) "
+              f"across {len(files)} file(s) [{scope}]", file=sys.stderr)
+        return 1
+    print(f"check_anchors: OK — {checked} anchor(s) in {len(files)} file(s) verified "
+          f"against {len(pins)} pin(s) [{scope}]")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except SystemExit:
+        raise
+    except KeyboardInterrupt:
+        sys.exit(130)

@@ -1,0 +1,11 @@
+# Pinned target repos are materialized locally by scripts/pin.sh, never committed.
+# Only repos/pins.tsv and repos/README.md are tracked (see !-rules below).
+/repos/*
+!/repos/pins.tsv
+!/repos/README.md
+
+# Local scratch
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
