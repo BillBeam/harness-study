@@ -1,15 +1,29 @@
 # Expected checker output per case file, TAB-separated:
-#   file<TAB>exit<TAB>space-separated problem codes (in order), or "-" for none
+#   file<TAB>exit<TAB>codes<TAB>counts
 #
-# scripts/selftest.sh asserts these exactly. A case file is a deliberately
-# broken artifact; none of them live under study/ or points/, so `make check`
-# never sees them.
-bad-range.md	1	bad-range
-clean.md	0	-
-line-out-of-range.md	1	line-out-of-range
-missing-commit.md	1	missing-commit
-no-repo.md	1	no-repo
-no-such-file.md	1	no-such-file
-stale-commit.md	1	stale-commit
-unknown-commit.md	1	unknown-commit
-unknown-repo.md	1	unknown-repo unknown-repo
+#   codes  : space-separated problem codes in order, or "-" for none
+#   counts : optional assertion on how much was actually looked at, e.g.
+#            "anchors=1", "files=2 anchors=2", "anchors>=3"; "-" for none.
+#            Codes alone cannot tell "checked it and it was fine" from "never
+#            looked" -- a case whose point is that something IS scanned (or is
+#            NOT) has to pin the count too, or a regression to silence passes.
+#
+# scripts/selftest.sh asserts these exactly, and also fails if a file in
+# tests/cases/ has no row here. A case file is a deliberately broken artifact;
+# none of them live under study/ or points/, so `make check` never sees them.
+bad-range.md	1	bad-range	-
+clean.md	0	-	anchors=2
+decimal-sha.md	0	-	anchors=1
+fence-blockquote-ok.md	0	-	anchors=1
+fence-indented-ok.md	0	-	anchors=1
+fence-infostring.md	1	line-out-of-range	anchors=1
+fence-nested-ok.md	0	-	anchors=0
+fence-quoted.md	1	line-out-of-range	anchors=1
+fence-unclosed.md	1	unclosed-fence	-
+line-out-of-range.md	1	line-out-of-range	-
+missing-commit.md	1	missing-commit	-
+no-repo.md	1	no-repo	-
+no-such-file.md	1	no-such-file	-
+stale-commit.md	1	stale-commit	-
+unknown-commit.md	1	unknown-commit	-
+unknown-repo.md	1	unknown-repo unknown-repo	-

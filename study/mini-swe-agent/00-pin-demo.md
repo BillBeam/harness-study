@@ -23,17 +23,23 @@ control loop: an unbounded `while True` that calls `step()`, turns
 trajectory in a `finally`, and stops on a condition worth noticing — not a
 return value, but the *role* of the last message being `exit`. The loop then
 returns that message's `extra` dict as the run result. Termination is a fact
-about the conversation, not about the call stack.
+about the conversation, not about the call stack. One arm of the loop is an
+exception: `src/minisweagent/agents/default.py:100-112` counts consecutive
+`FormatError`s and, at the cap, writes the `exit` message itself.
 
-**Termination is raised, not returned.** The exception hierarchy in
+**Termination is raised, but not by the raiser.** The exception hierarchy in
 `src/minisweagent/exceptions.py:4-6` gives every control-flow exception a
-constructor that stores conversation messages. So a raise site anywhere in the
-stack decides both *that* the run should stop and *what the transcript says
-about why*. The budget guard at
-`src/minisweagent/agents/default.py:132-147` uses it: step, cost and wall-clock
-limits are checked before any model call, and each raises an exception carrying
-a ready-made `exit` message. The `0 < limit <= current` idiom there is how
-"0 means unlimited" is encoded for all three budgets.
+constructor that stores conversation messages. A raise site anywhere in the
+stack therefore chooses *what the transcript says* — and only that. Whether the
+run stops is decided later, by the loop, from the role of the last message at
+`src/minisweagent/agents/default.py:122`. Of the 15 control-flow raise sites at
+this pin, 9 carry `role: "exit"` and stop the run; 6 carry `role: "user"` and
+deliberately do not. The budget guard at
+`src/minisweagent/agents/default.py:132-147` is one of the terminating kind:
+step, cost and wall-clock limits are checked before any model call, and each
+raises an exception carrying a ready-made `exit` message. The
+`0 < limit <= current` idiom there is how "0 means unlimited" is encoded for
+all three budgets.
 
 **The environment decides when the task is done.** Not the agent:
 `src/minisweagent/environments/local.py:48-56` inspects the executed command's

@@ -24,4 +24,30 @@ Built the repository skeleton and the mechanism the rest of it depends on.
   `points/001-control-flow-via-exceptions.md` so the conventions have a worked
   example rather than only a specification.
 
+Then ran an adversarial review over the scaffold — six dimensions, each finding
+independently re-derived by a skeptic told to refute it. 18 findings survived.
+The two that mattered:
+
+- **The checker could fail open.** Fence tracking normalised every opening fence
+  to three characters, so a longer fence quoting a shorter one — the ordinary
+  way to write about fence syntax, and unavoidable when the subject is a harness
+  whose action protocol *is* a fenced block — desynced the scanner and swallowed
+  the rest of the file. A deliberately wrong anchor after that point exited 0.
+  Fixed by tracking the opener verbatim, plus a backstop: an unclosed fence is
+  now reported rather than silently skipping to EOF.
+- **The prose was wrong while every anchor resolved.** `points/001` claimed a
+  raise site decides that a run stops. It does not: it decides only what the
+  transcript records, and 6 of 15 control-flow raise sites carry `role: "user"`
+  and do not stop anything. Worse, the note asserted the semantics that
+  `mini-swe-agent@10dfc4ea` — the commit it cites as the reversal — removed.
+  Rewritten, and the limitation is now stated in the README: an anchor proves a
+  location, never a claim.
+
+Also fixed: `pin.sh` recorded an annotated tag's tag object instead of its
+commit (permanent phantom "drifted"), and silently pinned the remote's HEAD when
+a ref failed to resolve — both silent wrong-pin bugs in a tool whose only job is
+pinning. The selftest grew from 15 assertions to 31 and now asserts *how much*
+was scanned, not just the codes; 10 of 10 deliberate mutations of the checker
+are caught, where the count-blind version missed one.
+
 Carried forward: points 002–005 in `matrix.md` are unread.

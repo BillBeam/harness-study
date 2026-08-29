@@ -13,7 +13,16 @@ make check
 ```
 
 That is the one command. It exits 0 when every anchor in `study/` and `points/`
-resolves, and non-zero with a `file:line` report when one does not.
+resolves, and non-zero with a `file:line` report when one does not. (On a fresh
+clone, run `make sync` once first — it materialises the pinned repositories the
+check reads. `make check` tells you so if you forget.)
+
+**What it does not check.** An anchor proves a *location* still exists; it says
+nothing about whether the prose around it is true. This is not hypothetical: a
+review of the first note in this repository found its central claim about
+mini-swe-agent was wrong while all fifteen of its anchors resolved. Anchors keep
+notes honest about where they point, and nothing else. Claims still need a
+reader.
 
 ## Layout
 
@@ -51,7 +60,7 @@ Three shapes are recognised:
 | --- | --- | --- |
 | code anchor, short | `path/to/file.py:97` or `path/to/file.py:97-120` | blob exists at the pinned commit; line(s) in range |
 | code anchor, explicit | `repo@25941c89:path/to/file.py:97` | same, at the named commit |
-| commit reference | `af906e86` or `repo@af906e86` | commit is in the clone and is an ancestor of the pin |
+| commit reference | `af906e86` (8+ hex) or `repo@af906e86` (7+ hex) | commit is in the clone and is an ancestor of the pin |
 
 Rules worth knowing:
 
@@ -62,12 +71,23 @@ Rules worth knowing:
 - **Short-form anchors always resolve at the pin.** To point at history on
   purpose, use the explicit form; the commit must be an ancestor of the pin, so
   a note can never quietly reference code outside the pinned history.
-- **Fenced code blocks are not scanned.** Syntax examples like the ones above
-  are safe.
+- **Fenced code blocks are not scanned**, including a fence indented under a
+  list item, one inside a blockquote, and a longer fence quoting a shorter one —
+  so a note *about* fence syntax is safe. A fence that is never closed is
+  reported (`unclosed-fence`) rather than silently swallowing the rest of the
+  file, because a silent skip is the one way this checker could claim success
+  while blind.
 - **A short-form path needs a `/` or a `.ext`.** That keeps `localhost:8080` out
   of the checker's way. If a real path fits neither shape, use the explicit form.
 - **A token that looks like an anchor but does not resolve is an error, not a
   skip.** If prose in backticks is mistaken for an anchor, drop the backticks.
+  `example.com:443` is the shape most likely to trip this.
+- **A bare commit reference needs 8+ lowercase hex**, which keeps English words
+  out. One exception is unavoidable: an all-digit token is genuinely ambiguous
+  (about 2% of abbreviated SHAs are all decimal), so it is resolved against the
+  clone — a real SHA is checked like any other, a plain number is ignored. The
+  cost is that a *mistyped* all-digit SHA is ignored too. Write an all-digit
+  hash as `repo@12345678` to have it checked unconditionally.
 
 Run `python3 scripts/check_anchors.py -v` to see every anchor the checker found,
 or `--json` for a machine-readable report.
@@ -101,7 +121,8 @@ is enough to reconstruct every checkout exactly.
 
 ## Adding a study
 
-1. `scripts/pin.sh add <name> <url>` — pin the repository.
+0. `make sync` — once per clone, materialise the pinned repositories.
+1. `scripts/pin.sh add <name> <url>` — pin the repository (this syncs it too).
 2. Create `study/<name>/NN-topic.md` with front matter naming the pin and its commit.
 3. Read, and write anchors as you go.
 4. `make check` — until it exits 0.
@@ -115,5 +136,10 @@ make selftest
 
 Runs the checker against `tests/` — an empty artifact set, a known-good note, a
 deliberately wrong anchor, and one case per failure mode — and asserts the exact
-exit code and error codes for each. `tests/` lives outside the `make check`
-scan, so its deliberately broken files never affect the real run.
+exit code, error codes and, where it matters, *how much was actually looked at*.
+That last part is the difference between "checked it and it was fine" and "never
+looked": without a count, a regression to silence passes as a success.
+
+`tests/` lives outside the `make check` scan, so its deliberately broken files
+never affect the real run. Every assertion fails rather than skips — a check
+that quietly declines to run is the same defect the checker exists to prevent.

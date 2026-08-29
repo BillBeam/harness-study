@@ -52,7 +52,8 @@ cmd_path() {
 }
 
 cmd_sync() {
-  local any=0 rc=0
+  local any=0 rc=0 pins_out
+  pins_out="$(read_pins "$@")" || rc=1
   while IFS=$'\t' read -r name url commit note; do
     [ -n "${name:-}" ] || continue
     any=1
@@ -66,6 +67,15 @@ cmd_sync() {
         info "!!! $name: clone failed"; rc=1; continue
       fi
     fi
+    # An existing clone may point at a url the pin has since moved away from.
+    # Repoint it rather than fetching forever from the old one; still fetch via
+    # the remote name, so remote-tracking refs are actually updated.
+    have="$(git -C "$dir" remote get-url origin 2>/dev/null || true)"
+    if [ -n "$have" ] && [ "$have" != "$url" ]; then
+      info "==> $name: origin is $have, pin says $url; repointing"
+      git -C "$dir" remote set-url origin "$url" \
+        || { info "!!! $name: cannot repoint origin"; rc=1; continue; }
+    fi
     if ! git -C "$dir" cat-file -e "${commit}^{commit}" 2>/dev/null; then
       info "==> $name: fetching (pinned commit $commit not present)"
       git -C "$dir" fetch --tags origin || { info "!!! $name: fetch failed"; rc=1; continue; }
@@ -73,16 +83,27 @@ cmd_sync() {
     if ! git -C "$dir" cat-file -e "${commit}^{commit}" 2>/dev/null; then
       info "!!! $name: pinned commit $commit not found after fetch"; rc=1; continue
     fi
+    # A pin recorded from an annotated tag names the tag object, not a commit.
+    # cat-file -e with ^{commit} peels, so the check above passes while checkout
+    # lands elsewhere and status then reports "drifted" forever. Say so once,
+    # with the id to record. Also catches a hand-edited pins.tsv row.
+    real="$(git -C "$dir" rev-parse "${commit}^{commit}")"
+    if [ "$real" != "$commit" ]; then
+      info "!!! $name: pin $commit is a $(git -C "$dir" cat-file -t "$commit"), not a commit"
+      info "    record $real instead (scripts/pin.sh update $name $real)"
+      rc=1; continue
+    fi
     git -C "$dir" checkout -q --detach "$commit" || { info "!!! $name: checkout failed"; rc=1; continue; }
     info "==> $name: at $commit ($(git -C "$dir" rev-list --count "$commit") commits of history)"
-  done < <(read_pins "$@")
-  [ "$any" -eq 1 ] || info "pin: no pins matched"
+  done <<< "$pins_out"
+  if [ "$any" -eq 0 ]; then info "pin: no pins matched${*:+: $*}"; rc=1; fi
   return $rc
 }
 
 cmd_status() {
   printf '%-20s %-12s %-10s %s\n' NAME PINNED STATE NOTE
-  local rc=0 seen=0
+  local rc=0 seen=0 pins_out
+  pins_out="$(read_pins "$@")" || rc=1
   while IFS=$'\t' read -r name url commit note; do
     [ -n "${name:-}" ] || continue
     local dir="$ROOT/repos/$name" state
@@ -97,9 +118,32 @@ cmd_status() {
     fi
     printf '%-20s %-12s %-10s %s\n' "$name" "${commit:0:12}" "$state" "$note"
     seen=1
-  done < <(read_pins "$@")
+  done <<< "$pins_out"
   if [ "$seen" -eq 0 ]; then info "pin: no pins matched${*:+: $*}"; rc=1; fi
   return $rc
+}
+
+# Resolve a ref at a remote to a 40-hex commit sha, or die. Shared by add and
+# update: the two used to carry separate copies of this, and the copies drifted.
+resolve_ref() { # <url> <ref>
+  local url="$1" ref="$2" sha
+  # A full object id is not a ref name, so ls-remote cannot match it. Take it
+  # verbatim; cmd_sync verifies it exists in the clone and fails loudly if not.
+  case "$ref" in
+    *[!0-9a-f]*|"") ;;
+    *) [ ${#ref} -eq 40 ] && { printf '%s\n' "$ref"; return 0; } ;;
+  esac
+  # Asking for "$ref^{}" as a second pattern is what makes an annotated tag
+  # yield its commit: ls-remote does not volunteer the peeled line otherwise,
+  # so a tag pin would record the tag object and read as "drifted" forever.
+  sha="$(git ls-remote "$url" "$ref" "$ref^{}" | awk '
+    $2 ~ /\^\{\}$/ { peeled = $1 }
+    NR == 1        { first = $1 }
+    END            { print (peeled != "" ? peeled : first) }')"
+  # No silent fallback to the remote's HEAD: a typo used to pin the default
+  # branch and report success.
+  [ -n "$sha" ] || die "could not resolve ref '$ref' at $url"
+  printf '%s\n' "$sha"
 }
 
 cmd_add() {
@@ -108,9 +152,7 @@ cmd_add() {
   case "$name" in *[!A-Za-z0-9._-]*) die "name must match [A-Za-z0-9._-]+" ;; esac
   read_pins "$name" | grep -q . && die "pin already exists: $name (use 'update')"
   local sha
-  sha="$(git ls-remote "$url" "$ref" | awk 'NR==1{print $1}')"
-  [ -n "$sha" ] || sha="$(git ls-remote "$url" | awk -v r="$ref" '$2=="HEAD"||$2=="refs/heads/"r{print $1; exit}')"
-  [ -n "$sha" ] || die "could not resolve ref '$ref' at $url"
+  sha="$(resolve_ref "$url" "$ref")"
   printf '%s\t%s\t%s\t%s\n' "$name" "$url" "$sha" "pinned from $ref" >> "$PINS"
   info "==> pinned $name at $sha"
   cmd_sync "$name"
@@ -121,8 +163,7 @@ cmd_update() {
   local name="$1" ref="$2" url old sha
   url="$(pin_field "$name" 2)"; old="$(pin_field "$name" 3)"
   [ -n "$url" ] || die "no such pin: $name"
-  sha="$(git ls-remote "$url" "$ref" | awk 'NR==1{print $1}')"
-  [ -n "$sha" ] || die "could not resolve ref '$ref' at $url"
+  sha="$(resolve_ref "$url" "$ref")"
   [ "$sha" = "$old" ] && { info "==> $name already at $sha"; return 0; }
   # Rewrite only the commit column of this record.
   awk -v FS='\t' -v OFS='\t' -v n="$name" -v s="$sha" \

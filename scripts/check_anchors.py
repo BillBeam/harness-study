@@ -36,6 +36,11 @@ from pathlib import Path
 
 DEFAULT_TARGETS = ["study", "points", "matrix.md", "LOG.md"]
 
+
+class ConfigError(Exception):
+    """A usage or configuration problem. Exits 2, distinct from a failed check."""
+
+
 # --------------------------------------------------------------------------
 # Anchor grammar
 # --------------------------------------------------------------------------
@@ -69,13 +74,29 @@ ANCHOR_RE = re.compile(
 
 # Bare commit references need 8+ lowercase hex to keep English words out; the
 # explicit `repo@sha` form is unambiguous and accepts git's 7-char minimum.
+#
+# An all-digit token is genuinely ambiguous: about 2% of abbreviated SHAs are
+# all-decimal (~1.9% of this pin's own history at 8 characters), so excluding
+# them by shape would stop verifying real commit references and turn a mistyped
+# one into a silent pass. Such a token is marked TENTATIVE instead and dropped
+# only when the clone says it is not a commit -- see verify().
 COMMIT_RE = re.compile(
     r"^(?:(?P<repo>[A-Za-z0-9._-]+)@(?P<xsha>[0-9a-fA-F]{7,40})|(?P<sha>[0-9a-f]{8,40}))$"
 )
 
 # Inline code spans: a run of backticks, content, the same run again.
 CODE_SPAN_RE = re.compile(r"(?P<ticks>`+)(?P<body>[^\n]+?)(?P=ticks)")
-FENCE_RE = re.compile(r"^\s{0,3}(?P<fence>`{3,}|~{3,})")
+
+# Fenced code blocks. The opener's marker and indent are both kept, because
+# CommonMark requires a closer to be at least as long as its opener and no more
+# than three columns further indented, and a closer carries no info string.
+# Normalising the marker to three characters (the obvious shortcut) desyncs the
+# state machine on a longer fence quoting a shorter one -- the ordinary way to
+# show fence syntax in Markdown -- which used to swallow the rest of the file.
+FENCE_RE = re.compile(r"^(?P<indent>[ \t]*)(?P<fence>`{3,}|~{3,})(?P<info>.*)$")
+# A leading blockquote prefix is stripped before fence and code-span matching so
+# that quoted material is read the same way as unquoted material.
+QUOTE_RE = re.compile(r"^(?:[ \t]{0,3}>[ \t]?)+")
 FRONT_KV_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_-]*)\s*:\s*(.*?)\s*$")
 
 
@@ -92,22 +113,22 @@ class Pin:
 
 def load_pins(pins_file: Path) -> dict[str, Pin]:
     if not pins_file.is_file():
-        raise SystemExit(f"check_anchors: missing pins file {pins_file}")
+        raise ConfigError(f"check_anchors: missing pins file {pins_file}")
     pins: dict[str, Pin] = {}
     for lineno, raw in enumerate(pins_file.read_text(encoding="utf-8").splitlines(), 1):
         if not raw.strip() or raw.lstrip().startswith("#"):
             continue
         parts = raw.split("\t")
         if len(parts) < 3:
-            raise SystemExit(
+            raise ConfigError(
                 f"{pins_file}:{lineno}: malformed pin (need name<TAB>url<TAB>commit[<TAB>note])"
             )
         name, url, commit = (p.strip() for p in parts[:3])
         note = parts[3].strip() if len(parts) > 3 else ""
         if not re.fullmatch(r"[0-9a-f]{40}", commit):
-            raise SystemExit(f"{pins_file}:{lineno}: commit {commit!r} is not a full 40-hex SHA")
+            raise ConfigError(f"{pins_file}:{lineno}: commit {commit!r} is not a full 40-hex SHA")
         if name in pins:
-            raise SystemExit(f"{pins_file}:{lineno}: duplicate pin {name!r}")
+            raise ConfigError(f"{pins_file}:{lineno}: duplicate pin {name!r}")
         pins[name] = Pin(name, url, commit, note)
     return pins
 
@@ -188,6 +209,7 @@ class Ref:
     path: str | None = None
     line: int | None = None
     end: int | None = None
+    tentative: bool = False
 
 
 @dataclass
@@ -197,6 +219,7 @@ class Artifact:
     commit: str | None = None
     front_lineno: dict[str, int] = field(default_factory=dict)
     refs: list[Ref] = field(default_factory=list)
+    unclosed_fence: int | None = None
 
 
 def parse_front_matter(lines: list[str]) -> tuple[dict[str, str], dict[str, int], int]:
@@ -226,16 +249,26 @@ def scan(file: Path) -> Artifact:
     art = Artifact(file=file, repo=front.get("repo") or None, commit=front.get("commit") or None,
                    front_lineno=where)
 
-    fence: str | None = None
+    # Open fence, as (marker, indent width, line number it opened on).
+    fence: tuple[str, int, int] | None = None
     for idx in range(body_start, len(lines)):
-        raw = lines[idx]
+        raw = QUOTE_RE.sub("", lines[idx])
         m = FENCE_RE.match(raw)
         if m:
             marker = m.group("fence")
+            indent = len(m.group("indent").expandtabs(4))
             if fence is None:
-                fence = marker[0] * 3
+                fence = (marker, indent, idx + 1)
                 continue
-            if marker[0] == fence[0] and len(marker) >= 3:
+            open_marker, open_indent, _ = fence
+            # CommonMark: same character, at least as long, no more than three
+            # columns further indented, and no info string.
+            if (
+                marker[0] == open_marker[0]
+                and len(marker) >= len(open_marker)
+                and indent <= open_indent + 3
+                and not m.group("info").strip()
+            ):
                 fence = None
                 continue
         if fence is not None:
@@ -262,6 +295,7 @@ def scan(file: Path) -> Artifact:
                 continue
             c = COMMIT_RE.match(token)
             if c:
+                sha = (c.group("xsha") or c.group("sha")).lower()
                 art.refs.append(
                     Ref(
                         kind="commit",
@@ -269,9 +303,17 @@ def scan(file: Path) -> Artifact:
                         lineno=idx + 1,
                         token=token,
                         repo=c.group("repo") or art.repo,
-                        commit=(c.group("xsha") or c.group("sha")).lower(),
+                        commit=sha,
+                        # A bare all-digit token might be a decimal literal rather
+                        # than a SHA; only the clone can tell. See COMMIT_RE.
+                        tentative=bool(c.group("sha")) and sha.isdigit(),
                     )
                 )
+    if fence is not None:
+        # Everything from here to EOF was skipped as if it were code. Say so
+        # rather than reporting success: an unclosed fence is the one way the
+        # scanner can stop seeing anchors, and it must never be silent.
+        art.unclosed_fence = fence[2]
     return art
 
 
@@ -286,7 +328,7 @@ def collect_files(root: Path, targets: list[str]) -> list[Path]:
         elif not (root / target).exists() and target in DEFAULT_TARGETS:
             continue  # a default target that does not exist yet is not an error
         else:
-            raise SystemExit(f"check_anchors: no such path: {target}")
+            raise ConfigError(f"check_anchors: no such path: {target}")
     # Deduplicate while keeping order.
     seen: set[Path] = set()
     return [p for p in found if not (p in seen or seen.add(p))]
@@ -313,6 +355,7 @@ class Problem:
 def verify(root: Path, arts: list[Artifact], pins: dict[str, Pin]) -> tuple[list[Problem], int]:
     problems: list[Problem] = []
     clones: dict[str, Clone] = {}
+    absent_reported: set[str] = set()
     checked = 0
 
     def clone_for(name: str) -> Clone:
@@ -321,6 +364,11 @@ def verify(root: Path, arts: list[Artifact], pins: dict[str, Pin]) -> tuple[list
         return clones[name]
 
     for art in arts:
+        if art.unclosed_fence is not None:
+            problems.append(Problem(art.file, art.unclosed_fence, "unclosed-fence",
+                                    "code fence opened here is never closed, so the rest of the "
+                                    "file was skipped and any anchor in it went unchecked"))
+
         # Front matter is only required once the file actually carries a short-form ref.
         if art.repo is not None:
             line = art.front_lineno.get("repo", 1)
@@ -350,9 +398,15 @@ def verify(root: Path, arts: list[Artifact], pins: dict[str, Pin]) -> tuple[list
             pin = pins[ref.repo]
             clone = clone_for(ref.repo)
             if not clone.present:
-                problems.append(Problem(art.file, ref.lineno, "repo-absent",
-                                        f"`{ref.token}` needs repos/{ref.repo}/ — run "
-                                        f"`scripts/pin.sh sync {ref.repo}`"))
+                # One line per absent repository, not per anchor: on a fresh
+                # clone every anchor hits this, and 30 copies of one remedy
+                # buries any other problem in the run.
+                if ref.repo not in absent_reported:
+                    absent_reported.add(ref.repo)
+                    problems.append(Problem(art.file, ref.lineno, "repo-absent",
+                                            f"repos/{ref.repo}/ is not materialised, so no anchor "
+                                            f"into it can be checked (first: `{ref.token}`) — run "
+                                            f"`make sync`"))
                 continue
 
             # Short-form refs always resolve at the pin. Front matter `commit:` is
@@ -362,6 +416,10 @@ def verify(root: Path, arts: list[Artifact], pins: dict[str, Pin]) -> tuple[list
             # historical commit on purpose, use the explicit `repo@sha:path:line`
             # form, which is checked to be an ancestor of the pin.
             sha = (ref.commit or pin.commit).lower()
+            if ref.tentative and not clone.has_commit(sha):
+                # An ordinary decimal number, not an abbreviated SHA after all.
+                checked -= 1
+                continue
             if not clone.has_commit(sha):
                 problems.append(Problem(art.file, ref.lineno, "unknown-commit",
                                         f"`{ref.token}`: commit {sha} is not in repos/{ref.repo}/ — "
@@ -452,6 +510,9 @@ def main(argv: list[str]) -> int:
 if __name__ == "__main__":
     try:
         sys.exit(main(sys.argv[1:]))
+    except ConfigError as exc:
+        print(exc, file=sys.stderr)
+        sys.exit(2)
     except SystemExit:
         raise
     except KeyboardInterrupt:
