@@ -260,3 +260,16 @@ title: mini-swe-agent 普查：机制族汇总与对照
 - **归并里只有一处「一个模块跨两族」而必须选一族。** `content_string.py` 同时被 `interactive.py` 的消息打印和 `inspector.py` 的轨迹渲染调用（[content_string.py:9-11](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/models/utils/content_string.py#L9-L11)），它的 15 条证据行整体归给了「轨迹查看与回放」。按「一条证据行只进一个族」的划分规则，这 15 条不再出现在「日志与终端输出」里。
 - **`walkthrough.md` 的 63 条链接与 `census.md` 的 1474 条是两次独立写成的，行号没有一处对不上。** 走查稿不是从普查里抄的，两边指向同一个钉住提交；这次第一次把两份独立写成的笔记放进同一次 `make check`，63 条链接一条都没需要改行号。校验器只能证明这一点——两边都指得对，不能证明两边说得对。
 - **清单第 41 行与第 42 行在这个仓库落到同一处代码。** 第 41 行（权限模式、白名单、确认关卡）与第 42 行（守卫的作用点）在钉住提交上都只对应 `InteractiveAgent` 的那一次人机问答（[interactive.py:162-163](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/agents/interactive.py#L162-L163)），归并时只能并进同一族；第二节已把第 42 行记为「基本没有」。
+
+## 八、收口第一列这一卡的卡外发现
+
+这一卡没要求找的，但做的时候撞见了，都在本仓库当前内容或钉住提交上复核过。
+
+- **`checklist.md` 升到第三版之后，本文件第一、二节引用的清单行号整体失效。** 第一节表格最后一列与第二节的对照，写的都是第二版的清单文件行号（13、14、16……91）；第三版在六个组的末尾各插了新行，原来的第 13 行现在是第 15 行，原来的第 91 行现在是第 101 行。按边界没有回去改本文件的前七节，所以重建的 `matrix.md` 是按条目内容而不是按行号做的映射；而且矩阵用的是「清单编号」（第二版的序号 1–68，加新增的 69–78），与本文件用的「清单文件行号」是两套数，读的时候不能互相代入。
+- **第一、二节没有覆盖清单的三行。** 「文件编辑原语」（第二版第 51 行）、「退出拦截与重新注入」（第 79 行）、「部署形态」（第 91 行）：第一节 33 个机制族的行号列里没有它们，第二节的缺席清单里也没有它们，`matrix.md` 对应的第 37、57、68 行因此只能写「未分配」。前两行不是仓库里查不到对应代码——第五节写了编辑被推到 sed 和 heredoc 上（[src/minisweagent/config/default.yaml:60-103](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/config/default.yaml#L60-L103)），第一节把提交前那次人机问答归给了「人工中断与新任务注入」一族（[src/minisweagent/agents/interactive.py:158-159](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/agents/interactive.py#L158-L159)）——而是归并与对照这两节都没有把它们挂到这两行上。「部署形态」在两节里都没有对应条目。
+- **走查稿与普查在「密钥」这一条上原本互相矛盾。** `walkthrough.md` 原来写「环境变量是配置里给的那几个——注意 XAI_API_KEY 被置成空串，agent 的 shell 里看不到密钥」，并把「密钥从工具环境剥离」列进「效果」的「有」；而本文件第二节写的是「没有，而且反过来」——本地环境把整个 `os.environ` 合并进子进程（[src/minisweagent/environments/local.py:29](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/environments/local.py#L29)），那次运行里 `XAI_API_KEY` 是空串是运行配置手动置空的结果。两份笔记独立写成，`make check` 两次都全绿：校验器只证明每条链接指得对，不证明句子说得对——这是这个仓库里第一处被抓到的实例。这一卡按普查改了走查稿的那两处。
+- **`checklist.md` 的标题行仍写着「第二版」。** 这一卡按「文件头加一行、其余行不动」执行，第三版的说明是加在标题下的新一行，标题里的版本号没有动。
+- **出处标记里现在有两条 `[mini]`。** 原有的「[mini] mini-swe-agent 已见」与这一卡加的「[mini] mini-swe-agent 普查残差」，同一个标记两条释义；第三版新增的十行与改写的四行用的都是这一个标记。
+- **`matrix.md` 与 `matrix.zh-CN.md` 内容相同。** 产物只写中文，矩阵因此没有英文版；但校验器要求 `X.zh-CN.md` 与 `X.md` 引用同一批锚点，而 `matrix.zh-CN.md` 又写在 `scripts/check_anchors.py` 的 `DEFAULT_TARGETS` 里，删掉它会让自测里「DEFAULT_TARGETS 不许有死条目」那条失败。边界不许改校验器，于是两份并存、内容相同，各 104 条锚点。
+- **`points/README.md` 与 `points/README.zh-CN.md` 里「`matrix.md` 里的空格子就是这个仓库的骨架」这句，从这一卡起不再成立。** 78 行每格都填了，矩阵不再有空格子；在第二列出现之前，「待办」需要另找表达方式。按边界没有去改这两份 README。
+- **锚点总数从 2128 涨到 2337。** 涨的 209 条里 206 条来自重建的矩阵——新的两份矩阵各 104 条，旧的两份各只有 1 条（钉住提交那个行内代码）——另外 3 条是本节自己引的。`walkthrough.md` 仍是 63 条：两处替换里写的那个「文件名冒号行号」在正文括号里而不在反引号里，按校验器的语法不构成锚点——把它放进反引号，`make check` 立刻会报 `no-such-file`，因为短形式的路径要从目标仓库根目录算起。
