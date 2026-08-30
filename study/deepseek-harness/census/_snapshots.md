@@ -6,7 +6,7 @@ title: deepseek-harness 普查 · snapshots/（快照夹具）
 
 # snapshots/（快照夹具）
 
-钉住提交 `cd5ef8148158c3a752a658978873241fdf8e2bbc` 上这一组的逐文件机制普查，共 615 个文件、3528 条证据行。判据、读法与全仓库口径见 [`../census-index.md`](../census-index.md)。
+钉住提交 `cd5ef8148158c3a752a658978873241fdf8e2bbc` 上这一组的逐文件机制普查，共 615 个文件、3705 条证据行。判据、读法与全仓库口径见 [`../census-index.md`](../census-index.md)。
 
 ### snapshots/AGENTS.md
 
@@ -212,41 +212,15 @@ ACP 语料的测试套件入口，读取同目录各场景的 `snapshot.yml` 并
 
 ### snapshots/acp/escalation-approved/system-prompt.expected.md
 
-被 `snapshot.yml` 声明为 header sidecar 的期望系统提示词全文，即模型在该组合下实际看到的系统消息。
+这条路径在钉住提交上是一个**符号链接**（mode `120000`），blob 的内容就是链接目标那一行字符串，不是快照正文；正文与其机制记在 `snapshots/session/text-turn/system-prompt.expected.md` 自己那一节。
 
-- 首行给出 agent 身份行（[snapshots/acp/escalation-approved/system-prompt.expected.md:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L1)）
-- 随后是 `cordis.yml` 里的 persona，`{{model}}` 与 `{{cwd}}` 已被替换为具体模型名与工作目录 token（[snapshots/acp/escalation-approved/system-prompt.expected.md:3-5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L3-L5)）
-- 要求逐条检查 bash 结果里的 `[exit code: N]` 标记（[snapshots/acp/escalation-approved/system-prompt.expected.md:8](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L8)）
-- 规定用 read 工具而非 shell 命令看文件，并说明结果带行号、可用 offset/limit 续读（[snapshots/acp/escalation-approved/system-prompt.expected.md:10](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L10)）
-- 规定 write 覆盖既有文件、须先 read（默认 fs-observation-policy 要求），定向修改优先用 edit（[snapshots/acp/escalation-approved/system-prompt.expected.md:12](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L12)）
-- 规定 edit 的字面替换语义、唯一性要求与 `replace_all`，以及先读文件的前提（[snapshots/acp/escalation-approved/system-prompt.expected.md:14](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L14)）
-- 说明 glob 的 basename 匹配语义、只返回文件、含隐藏与被忽略文件，以及按修改时间排序与截断行为（[snapshots/acp/escalation-approved/system-prompt.expected.md:16](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L16)）
-- 规定内容搜索走 grep 工具而非 shell（[snapshots/acp/escalation-approved/system-prompt.expected.md:18](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L18)）
-- 规定后台 job 的处理方式：不轮询不 sleep、结束时会收到会话内通知、终答前用 `job_output` 收集并 `job_kill` 无关 job（[snapshots/acp/escalation-approved/system-prompt.expected.md:20](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L20)）
-- 规定 `web_search` 的 1–4 条查询数组、返回来源为外部不可信数据、不得当作指令并需引用链接（[snapshots/acp/escalation-approved/system-prompt.expected.md:22](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L22)）
-- 规定 goal 工具的使用条件：可从直接人类请求推断意图、`update_goal` 前须 `get_goal` 并复制 `goal_id` 与 revision、恢复或 fork 后须用 resume 重新激活、blocked 需同一阻塞条件连续 3 轮（[snapshots/acp/escalation-approved/system-prompt.expected.md:24](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L24)）
-- 把 workflow 工具限制为用户显式要求工作流或大规模多智能体编排时才用（[snapshots/acp/escalation-approved/system-prompt.expected.md:26](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L26)）
-- 把 ralph 工具限制为直接人类显式要求时才用，并说明每轮起新子代理、以共享工作区为持久记忆（[snapshots/acp/escalation-approved/system-prompt.expected.md:28](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L28)）
-- 规定 subagent 默认后台运行、独立委派同批发起，并说明后台运行结束时运行时会回送含结果的通知（[snapshots/acp/escalation-approved/system-prompt.expected.md:30](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L30)）
+- 该路径以符号链接入库，blob 单行内容为 `../../session/text-turn/system-prompt.expected.md`，使 `snapshots/acp/escalation-approved/` 这一场景复用 `snapshots/session/text-turn/` 的同名期望文件而不是各存一份（[snapshots/acp/escalation-approved/system-prompt.expected.md:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/system-prompt.expected.md#L1)）
 
 ### snapshots/acp/escalation-approved/tool-schemas.expected.json
 
-被 `snapshot.yml` 声明为 header sidecar 的期望工具 schema 全文，即模型在该组合下实际收到的工具定义。
+这条路径在钉住提交上是一个**符号链接**（mode `120000`），blob 的内容就是链接目标那一行字符串，不是快照正文；正文与其机制记在 `snapshots/session/text-turn/tool-schemas.expected.json` 自己那一节。
 
-- 顶层 `initial` 数组给出首次请求时的完整工具集合（[snapshots/acp/escalation-approved/tool-schemas.expected.json:2](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L2)）
-- `bash` 的描述规定每次调用是全新 shell、无状态延续、须用 `workdir` 而非 `cd`，非零退出以 `[exit code: N]` 报告（[snapshots/acp/escalation-approved/tool-schemas.expected.json:4-5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L4-L5)）
-- 同一描述规定沙箱拒绝以 `[sandbox: file access denied under <mode> mode]` 呈现，且必须在同一轮用同一命令加 `sandbox_permissions` 与一句 `justification` 重试一次，禁止先走对话讨要权限，审批被拒即为终局（[snapshots/acp/escalation-approved/tool-schemas.expected.json:5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L5)）
-- `bash` 的 `run_in_background` 参数使调用立刻返回 job id 且不施加超时（[snapshots/acp/escalation-approved/tool-schemas.expected.json:25-28](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L25-L28)）
-- `bash` 的 `sandbox_permissions` 枚举被限定为 `workspace-write` 与 `danger-full-access`，且与 `justification` 成对出现（[snapshots/acp/escalation-approved/tool-schemas.expected.json:29-40](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L29-L40)）
-- `bash` 的必填参数被固定为 `command` 与 `description`（[snapshots/acp/escalation-approved/tool-schemas.expected.json:42-45](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L42-L45)）
-- `create_goal` 的描述声明执行侧拒绝非人类与子代理权限来源（[snapshots/acp/escalation-approved/tool-schemas.expected.json:49-50](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L49-L50)）
-- `skill` 工具要求用会话技能目录里的精确名称加载完整指令（[snapshots/acp/escalation-approved/tool-schemas.expected.json:344-358](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L344-L358)）
-- `str_replace_editor` 声明 `view`／`create`／`str_replace`／`insert` 四个命令及 `old_str` 唯一匹配、长输出截断为 `<response clipped>` 等规则（[snapshots/acp/escalation-approved/tool-schemas.expected.json:361-375](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L361-L375)）
-- `subagent` 声明子代理默认后台运行、立刻返回持久 id、结算时回送通知，且只返回结果不返回中间步骤（[snapshots/acp/escalation-approved/tool-schemas.expected.json:445-468](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L445-L468)）
-- `subagent_fork` 声明子代理继承本会话已完成的轮次但看不到进行中的这一轮，且该调用同步等待结果、无 `run_in_background` 参数（[snapshots/acp/escalation-approved/tool-schemas.expected.json:470-489](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L470-L489)）
-- `todo_write` 规定每次必须发送整份列表并整体替换旧列表，以及各状态的使用条件（[snapshots/acp/escalation-approved/tool-schemas.expected.json:491-493](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L491-L493)）
-- `write` 同样带 `sandbox_permissions` 枚举与 `justification`，必填参数为 `file_path` 与 `content`（[snapshots/acp/escalation-approved/tool-schemas.expected.json:682-698](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L682-L698)）
-- 顶层 `changes` 为空数组，断言整段会话中工具集合未发生变更（[snapshots/acp/escalation-approved/tool-schemas.expected.json:702](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L702)）
+- 该路径以符号链接入库，blob 单行内容为 `../../session/text-turn/tool-schemas.expected.json`，使 `snapshots/acp/escalation-approved/` 这一场景复用 `snapshots/session/text-turn/` 的同名期望文件而不是各存一份（[snapshots/acp/escalation-approved/tool-schemas.expected.json:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/escalation-approved/tool-schemas.expected.json#L1)）
 
 ### snapshots/acp/escalation-rejected/input.json
 
@@ -342,6 +316,379 @@ ACP 语料的测试套件入口，读取同目录各场景的 `snapshot.yml` 并
 
 - 声明 profile `acp` 与组合 `acp-default`（[snapshots/acp/handshake/snapshot.yml:3-4](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/handshake/snapshot.yml#L3-L4)）
 - `recording: authored` 与 `header.class: acp-default` 决定录制归属与 header 归一化类别，且未声明 `replay.override`、`platform`、`permission`（[snapshots/acp/handshake/snapshot.yml:5-7](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/handshake/snapshot.yml#L5-L7)）
+
+### snapshots/acp/handshake/stdout.expected.jsonl
+
+ACP 握手场景的期望标准输出，逐行断言 ACP 服务端回给客户端的 JSON-RPC 响应。
+
+- 断言 `initialize` 响应固定为 protocolVersion 1、agentInfo 名称与版本、mcpCapabilities.http 为真、promptCapabilities 三项（image/audio/embeddedContext）全为 false、sessionCapabilities 含 close/list/resume、authMethods 为空数组（[snapshots/acp/handshake/stdout.expected.jsonl:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/handshake/stdout.expected.jsonl#L1)）
+- 断言 `newSession` 响应返回 sessionId，并带一个 id 为 model 的 select 型 configOptions，currentValue 是 `["deepseek-official","deepseek-v4-flash"]`，options 按 provider 分组列出两个模型（[snapshots/acp/handshake/stdout.expected.jsonl:2](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/handshake/stdout.expected.jsonl#L2)）
+
+### snapshots/acp/image-compaction/cordis.snapshot.yml
+
+image-compaction 场景在无密钥回放下叠加的 profile 补丁层，替换 LLM 适配器并重钉视觉模型。
+
+- 把 `llm-deepseek` 条目置为 disabled，移除真实 provider（[snapshots/acp/image-compaction/cordis.snapshot.yml:5-7](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.snapshot.yml#L5-L7)）
+- 把 acp 插件的 provider/model 钉到 `deepseek-official` / `deepseek-v4-flash-vision-exp`（[snapshots/acp/image-compaction/cordis.snapshot.yml:9-13](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.snapshot.yml#L9-L13)）
+- 会话持久化根目录由 `DSH_SNAPSHOT_SESSIONS_ROOT` 环境变量决定并关闭压缩（[snapshots/acp/image-compaction/cordis.snapshot.yml:15-19](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.snapshot.yml#L15-L19)）
+- 把 agent-instructions 读入上限设为 65536 字节（[snapshots/acp/image-compaction/cordis.snapshot.yml:21-24](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.snapshot.yml#L21-L24)）
+- 用带 `{{model}}` / `{{cwd}}` 占位的 persona 覆盖系统提示词首段（[snapshots/acp/image-compaction/cordis.snapshot.yml:26-32](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.snapshot.yml#L26-L32)）
+- 插入 `llm-replay` 回放 provider，并声明目录中三个模型的 inputModalities，其中视觉模型声明 `[text, image]`（[snapshots/acp/image-compaction/cordis.snapshot.yml:34-47](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.snapshot.yml#L34-L47)）
+- 给视觉模型设定 contextWindow 11600 与 imageRequestTokens 384，决定请求内图片的计价与上下文压力（[snapshots/acp/image-compaction/cordis.snapshot.yml:48-52](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.snapshot.yml#L48-L52)）
+- 挂载 `attachment-local` 附件存储（[snapshots/acp/image-compaction/cordis.snapshot.yml:54-55](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.snapshot.yml#L54-L55)）
+- 把 compaction-basic 的 retainTokens 设为 100，压低自动压缩阈值（[snapshots/acp/image-compaction/cordis.snapshot.yml:61-64](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.snapshot.yml#L61-L64)）
+
+### snapshots/acp/image-compaction/cordis.yml
+
+image-compaction 场景的实录（带密钥）组合配置，供 acp profile 叠加。
+
+- 把 acp 插件的 provider/model 钉到视觉模型（[snapshots/acp/image-compaction/cordis.yml:7-11](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.yml#L7-L11)）
+- 会话持久化根目录取自环境变量、压缩关闭（[snapshots/acp/image-compaction/cordis.yml:13-17](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.yml#L13-L17)）
+- agent-instructions 读入上限 65536 字节（[snapshots/acp/image-compaction/cordis.yml:19-22](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.yml#L19-L22)）
+- 覆盖系统提示词 persona 文本（[snapshots/acp/image-compaction/cordis.yml:24-30](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.yml#L24-L30)）
+- 挂载 `attachment-local`，read_image 与内联图片经由它落到持久附件存储（[snapshots/acp/image-compaction/cordis.yml:32-33](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.yml#L32-L33)）
+- compaction-basic 的 retainTokens 设为 100（[snapshots/acp/image-compaction/cordis.yml:39-42](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/cordis.yml#L39-L42)）
+
+### snapshots/acp/image-compaction/input.json
+
+驱动 image-compaction 场景的 ACP 客户端输入脚本，按 steps 顺序发起协议调用。
+
+- 依次执行 `initialize` 与 `newSession` 两步握手（[snapshots/acp/image-compaction/input.json:3-8](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/input.json#L3-L8)）
+- 第一次 `promptContent` 把 6 个 base64 PNG image 块与文本块交错送入提示，末尾附一句要求简短确认（[snapshots/acp/image-compaction/input.json:9-74](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/input.json#L9-L74)）
+- 第二次 `promptContent` 只送一条纯文本，要求模型回复单词 DONE（[snapshots/acp/image-compaction/input.json:76-84](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/input.json#L76-L84)）
+
+### snapshots/acp/image-compaction/session.jsonl
+
+image-compaction 场景的录制会话日志，回放时按行喂给 llm-replay 并作为期望的会话事件流。
+
+- 首行会话头记录 format version 0、会话 id、createdAt、cwd 与 delegationDepth（[snapshots/acp/image-compaction/session.jsonl:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L1)）
+- 记录权限预设、沙箱模式 danger-full-access 与审批策略 never（[snapshots/acp/image-compaction/session.jsonl:2-4](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L2-L4)）
+- 收件箱 splice 把用户消息投入 next-turn，六个图片块以 `attachmentId` 内容哈希加 mediaType/width/height/bytes 的引用形式入日志而非原始字节（[snapshots/acp/image-compaction/session.jsonl:5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L5)）
+- 回合开始后再 splice 一次把该条消息从收件箱移除（[snapshots/acp/image-compaction/session.jsonl:6-7](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L6-L7)）
+- 用户消息以 `surfaceOp: append` 进入模型可见面（[snapshots/acp/image-compaction/session.jsonl:9](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L9)）
+- 系统提示词插件追加一条运行期上下文快照消息，声明它取代先前快照，并按 sandbox:policy / approval:policy 分节记录（[snapshots/acp/image-compaction/session.jsonl:10](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L10)）
+- 由首条用户消息回落生成会话标题并记录其来源 seq（[snapshots/acp/image-compaction/session.jsonl:11](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L11)）
+- request/header 以 reason `initial` 记录本次请求的 provider/model 与被归一化的 system/tools（[snapshots/acp/image-compaction/session.jsonl:12](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L12)）
+- request/context 记录本次路由的 contextWindow 为 11600（[snapshots/acp/image-compaction/session.jsonl:13](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L13)）
+- 文本块的 block-start / block-end / usage / finish 四类 chunk 构成第一步的流式输出（[snapshots/acp/image-compaction/session.jsonl:14-17](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L14-L17)）
+- assistant/message 汇总该步消息，并用 sourceEventSeqs 指回它由哪些事件合成（[snapshots/acp/image-compaction/session.jsonl:18](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L18)）
+- 第二条用户消息 splice 进收件箱，触发第二个回合（[snapshots/acp/image-compaction/session.jsonl:21-23](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L21-L23)）
+- 第二回合开头触发压缩：compaction/start 后由一次 llm 调用产出 summary，记录被遮蔽区间 `{start:7,end:7}`、shadowedSeqs 与 shadowedTokenCount 366（[snapshots/acp/image-compaction/session.jsonl:24-25](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L24-L25)）
+- 压缩产出一条 checkpoint 用户消息，以 `surfaceOp: {op:"replace", start:7, end:7}` 顶替原图片消息，从而改变后续请求里模型看到的历史（[snapshots/acp/image-compaction/session.jsonl:26-27](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L26-L27)）
+- 第二回合的 request/header 以 reason `series` 记录（[snapshots/acp/image-compaction/session.jsonl:30](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L30)）
+- 第二回合以 finish stop 与 turn/end completed 结束循环（[snapshots/acp/image-compaction/session.jsonl:34-37](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/session.jsonl#L34-L37)）
+
+### snapshots/acp/image-compaction/snapshot.yml
+
+image-compaction 场景的清单文件，声明用哪个 profile/组合回放、期望产物归属与输入附件。
+
+- 声明 profile 为 acp、组合为 image-compaction、recording 为 authored（人工编写而非实录）（[snapshots/acp/image-compaction/snapshot.yml:1-5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/snapshot.yml#L1-L5)）
+- header 声明 class 为 image-compaction 且 `pin: true`，并把 systemPromptSource 指到 `session/read-image`、toolSchemasSource 指到 `escalation-approved`，即本类的期望系统提示词与工具 schema 由别处场景拥有（[snapshots/acp/image-compaction/snapshot.yml:6-10](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/snapshot.yml#L6-L10)）
+- 声明本场景权限为 danger-full-access（[snapshots/acp/image-compaction/snapshot.yml:11](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/snapshot.yml#L11)）
+- 以 sha256 id、mediaType 与 base64 数据预置输入附件，供回放时按 attachmentId 还原图片（[snapshots/acp/image-compaction/snapshot.yml:12-16](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/snapshot.yml#L12-L16)）
+
+### snapshots/acp/image-compaction/stdout.expected.jsonl
+
+image-compaction 场景 ACP 服务端的期望标准输出，逐行断言外部客户端能观察到什么。
+
+- 断言 `initialize` 响应在该组合下 promptCapabilities.image 变为 true（[snapshots/acp/image-compaction/stdout.expected.jsonl:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/stdout.expected.jsonl#L1)）
+- 断言 `newSession` 的模型选项列出三个模型且 currentValue 为视觉模型（[snapshots/acp/image-compaction/stdout.expected.jsonl:2](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/stdout.expected.jsonl#L2)）
+- 断言第一回合推送 `agent_message_chunk` 文本更新、随后 `usage_update` 带 used 与 size 11600、最后以 `stopReason: end_turn` 应答 prompt 请求（[snapshots/acp/image-compaction/stdout.expected.jsonl:3-5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/stdout.expected.jsonl#L3-L5)）
+- 断言第二回合同样推送文本 chunk、usage_update 与 end_turn，且压缩本身不产生额外对外通知（[snapshots/acp/image-compaction/stdout.expected.jsonl:6-8](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/stdout.expected.jsonl#L6-L8)）
+
+### snapshots/acp/image-compaction/system-prompt.expected.md
+
+这条路径在钉住提交上是一个**符号链接**（mode `120000`），blob 的内容就是链接目标那一行字符串，不是快照正文；正文与其机制记在 `snapshots/session/read-image/system-prompt.expected.md` 自己那一节。
+
+- 该路径以符号链接入库，blob 单行内容为 `../../session/read-image/system-prompt.expected.md`，使 `snapshots/acp/image-compaction/` 这一场景复用 `snapshots/session/read-image/` 的同名期望文件而不是各存一份（[snapshots/acp/image-compaction/system-prompt.expected.md:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/image-compaction/system-prompt.expected.md#L1)）
+
+### snapshots/acp/reject-extra-dirs/input.json
+
+reject-extra-dirs 场景的 ACP 输入脚本，验证 newSession 携带非法参数时的拒绝路径。
+
+- 先 `initialize`，再以 `newSessionExpectError` 携带 `additionalDirectories: ["/extra-dir"]` 发起会话创建（[snapshots/acp/reject-extra-dirs/input.json:3-4](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/reject-extra-dirs/input.json#L3-L4)）
+
+### snapshots/acp/reject-extra-dirs/session.jsonl
+
+该场景的会话日志，只有一条会话头，代表会话创建被拒后没有产生任何后续事件。
+
+- 会话头记录 version 0、id、createdAt 0 与 delegationDepth，且不含 cwd（[snapshots/acp/reject-extra-dirs/session.jsonl:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/reject-extra-dirs/session.jsonl#L1)）
+
+### snapshots/acp/reject-extra-dirs/snapshot.yml
+
+reject-extra-dirs 场景的清单文件。
+
+- 声明 profile 为 acp、组合为 acp-default、recording 为 authored（[snapshots/acp/reject-extra-dirs/snapshot.yml:1-5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/reject-extra-dirs/snapshot.yml#L1-L5)）
+- header class 为 acp-default 且未声明 pin，故不拥有该类的系统提示词/工具 schema 期望文件（[snapshots/acp/reject-extra-dirs/snapshot.yml:6-7](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/reject-extra-dirs/snapshot.yml#L6-L7)）
+
+### snapshots/acp/reject-extra-dirs/stdout.expected.jsonl
+
+该场景的期望标准输出，断言外部客户端看到的握手与拒绝响应。
+
+- 断言 `initialize` 正常返回，promptCapabilities.image 为 false（[snapshots/acp/reject-extra-dirs/stdout.expected.jsonl:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/reject-extra-dirs/stdout.expected.jsonl#L1)）
+- 断言 `newSession` 返回 JSON-RPC 错误码 -32602 与消息 `Invalid params: additionalDirectories is not supported`，即该参数被拒而非被忽略（[snapshots/acp/reject-extra-dirs/stdout.expected.jsonl:2](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/acp/reject-extra-dirs/stdout.expected.jsonl#L2)）
+
+### snapshots/sdk/bash-tool/cordis.snapshot.yml
+
+SDK 普通组合在无密钥回放时叠加的补丁层。
+
+- 禁用 `llm-deepseek` 条目（[snapshots/sdk/bash-tool/cordis.snapshot.yml:3-5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/cordis.snapshot.yml#L3-L5)）
+- 插入 `llm-replay` 并声明 provider `deepseek-official` 及模型 `deepseek-v4-flash`（[snapshots/sdk/bash-tool/cordis.snapshot.yml:7-15](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/cordis.snapshot.yml#L7-L15)）
+
+### snapshots/sdk/bash-tool/cordis.yml
+
+bash-tool 场景实录时使用的 SDK 组合配置。
+
+- 关闭 skill-filesystem 的默认技能根目录，使会话技能目录不含默认项（[snapshots/sdk/bash-tool/cordis.yml:3-6](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/cordis.yml#L3-L6)）
+- 打开 thinking 并把 reasoningEffort 设为 max，决定模型输出是否含 reasoning 块（[snapshots/sdk/bash-tool/cordis.yml:8-12](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/cordis.yml#L8-L12)）
+- 会话持久化根目录取 `dshHomePath('sessions')`，压缩在 `DSH_SNAPSHOT` 存在时降为 none、否则用 zstd（[snapshots/sdk/bash-tool/cordis.yml:14-18](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/cordis.yml#L14-L18)）
+- tool-subagent 用 spawn provider、工具名 subagent、backgroundMode 为 one-shot、禁用 run_in_background 参数、最大委派深度 1（[snapshots/sdk/bash-tool/cordis.yml:20-27](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/cordis.yml#L20-L27)）
+
+### snapshots/sdk/bash-tool/notifications.expected.jsonl
+
+bash-tool 场景 SDK 服务端推给客户端的期望通知流，逐行断言 JSON-RPC 通知的方法名、顺序与载荷。
+
+- 首条通知即把 `agent/inbox/spliced` 事件带 seq/time 转发给客户端（[snapshots/sdk/bash-tool/notifications.expected.jsonl:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L1)）
+- 会话开始工作时推送 `session.status` 为 running（[snapshots/sdk/bash-tool/notifications.expected.jsonl:2](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L2)）
+- turn/start、收件箱移除与 step/start 依次外推（[snapshots/sdk/bash-tool/notifications.expected.jsonl:3-5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L3-L5)）
+- 用户消息与系统提示词插件的运行期上下文快照消息（workspace-write 与 approval ask 两节）都作为事件外推（[snapshots/sdk/bash-tool/notifications.expected.jsonl:6-7](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L6-L7)）
+- 会话标题、request/header 与 request/context 外推（[snapshots/sdk/bash-tool/notifications.expected.jsonl:8-10](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L8-L10)）
+- reasoning 块以 block-start 加逐词 `reasoning-delta` 的形式逐条推送（[snapshots/sdk/bash-tool/notifications.expected.jsonl:11-28](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L11-L28)）
+- 工具调用以 block-start 加逐片 `tool-call-delta`（携带 callId 与 name）推送参数增量（[snapshots/sdk/bash-tool/notifications.expected.jsonl:29-60](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L29-L60)）
+- 两个 block-end 分别给出完整 reasoning 文本与完整工具调用 arguments 字符串（[snapshots/sdk/bash-tool/notifications.expected.jsonl:61-62](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L61-L62)）
+- usage chunk 带 inputTokens/outputTokens/cacheReadTokens/reasoningTokens，finish 的 reason 为 `tool-calls`（[snapshots/sdk/bash-tool/notifications.expected.jsonl:63-64](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L63-L64)）
+- assistant/message 汇总该步并带上完整 sourceEventSeqs 列表（[snapshots/sdk/bash-tool/notifications.expected.jsonl:65](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L65)）
+- tool/call 与 tool/result 外推，结果内容为命令 stdout 且 `isError: false`（[snapshots/sdk/bash-tool/notifications.expected.jsonl:66-67](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L66-L67)）
+- 工具结果落地后循环进入同一回合的第 2 步（[snapshots/sdk/bash-tool/notifications.expected.jsonl:68-69](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L68-L69)）
+- 第 2 步以 reasoning 与 text 两块流式推送最终答复（[snapshots/sdk/bash-tool/notifications.expected.jsonl:70-97](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L70-L97)）
+- finish reason 为 `stop`，随后 assistant/message、step/end 与 turn/end completed（[snapshots/sdk/bash-tool/notifications.expected.jsonl:98-101](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L98-L101)）
+- 末条通知把 `session.status` 推回 idle（[snapshots/sdk/bash-tool/notifications.expected.jsonl:102](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/notifications.expected.jsonl#L102)）
+
+### snapshots/sdk/bash-tool/result.expected.json
+
+bash-tool 场景 SDK 调用的期望返回值。
+
+- 断言返回体只含 sessionId 与 finalResponse，且 finalResponse 等于命令 stdout 文本（[snapshots/sdk/bash-tool/result.expected.json:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/result.expected.json#L1)）
+
+### snapshots/sdk/bash-tool/session.jsonl
+
+bash-tool 场景的实录会话日志，既是回放输入也是期望的持久化事件流。
+
+- 会话头记录 version 0、id、createdAt、cwd 与 delegationDepth（[snapshots/sdk/bash-tool/session.jsonl:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/session.jsonl#L1)）
+- 记录权限预设 workspace-write、沙箱模式 workspace-write 与审批策略 ask（[snapshots/sdk/bash-tool/session.jsonl:2-4](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/session.jsonl#L2-L4)）
+- 用户任务经收件箱 splice 入队、回合开始后再被移除（[snapshots/sdk/bash-tool/session.jsonl:5-7](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/session.jsonl#L5-L7)）
+- 系统提示词插件追加的运行期上下文消息在 workspace-write 下写明可改动范围限于会话工作区，并说明 ask 策略下无应答者时请求失败关闭（[snapshots/sdk/bash-tool/session.jsonl:10](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/session.jsonl#L10)）
+- 由首条用户消息回落生成标题（[snapshots/sdk/bash-tool/session.jsonl:11](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/session.jsonl#L11)）
+- request/header 与 request/context 记录 provider/model（[snapshots/sdk/bash-tool/session.jsonl:12-13](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/session.jsonl#L12-L13)）
+- 逐词 reasoning 增量在日志里被折叠为一条 `reasoning-chunks`，用 dt 数组与 texts 数组保存时序与切片（[snapshots/sdk/bash-tool/session.jsonl:15](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/session.jsonl#L15)）
+- 工具调用参数增量同样折叠为一条 `tool-call-chunks`，保留 callId、name、dt 与 args 切片数组（[snapshots/sdk/bash-tool/session.jsonl:17](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/session.jsonl#L17)）
+- block-end 给出完整 reasoning 文本与完整工具调用参数（[snapshots/sdk/bash-tool/session.jsonl:18-19](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/session.jsonl#L18-L19)）
+- usage 与 finish `tool-calls` 决定循环继续（[snapshots/sdk/bash-tool/session.jsonl:20-21](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/session.jsonl#L20-L21)）
+- tool/call 与 tool/result 记录实际执行与其 stdout，结果以 append 进入模型可见面（[snapshots/sdk/bash-tool/session.jsonl:23-24](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/session.jsonl#L23-L24)）
+- 同一回合内 step 2 复用折叠后的 reasoning-chunks 与 text-chunks，以 finish stop 与 turn/end completed 收尾（[snapshots/sdk/bash-tool/session.jsonl:26-37](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/session.jsonl#L26-L37)）
+
+### snapshots/sdk/bash-tool/snapshot.yml
+
+bash-tool 场景的清单文件。
+
+- 声明 profile 为 sdk、组合为 sdk-default、recording 为 live（真实 API 实录）（[snapshots/sdk/bash-tool/snapshot.yml:1-5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/snapshot.yml#L1-L5)）
+- header class 为 sdk-default 且 `pin: true`，本场景因此拥有该类的 system-prompt 与 tool-schemas 期望文件（[snapshots/sdk/bash-tool/snapshot.yml:6-8](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/snapshot.yml#L6-L8)）
+
+### snapshots/sdk/bash-tool/system-prompt.expected.md
+
+sdk-default 组合下渲染后的完整系统提示词期望文本。
+
+- 首行 harness 身份行（[snapshots/sdk/bash-tool/system-prompt.expected.md:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/system-prompt.expected.md#L1)）
+- persona 段渲染出模型名与工作目录，且不含 acp 组合里的沙箱说明句（[snapshots/sdk/bash-tool/system-prompt.expected.md:3](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/system-prompt.expected.md#L3)）
+- 要求检查每条 bash 结果的 `[exit code: N]` 标记（[snapshots/sdk/bash-tool/system-prompt.expected.md:5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/system-prompt.expected.md#L5)）
+- 规定 read 工具的使用与续读方式（[snapshots/sdk/bash-tool/system-prompt.expected.md:7](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/system-prompt.expected.md#L7)）
+- 规定 write 覆盖语义与先读后写要求（[snapshots/sdk/bash-tool/system-prompt.expected.md:9](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/system-prompt.expected.md#L9)）
+- 规定 edit 的唯一匹配与 replace_all 规则（[snapshots/sdk/bash-tool/system-prompt.expected.md:11](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/system-prompt.expected.md#L11)）
+- 规定 glob 的匹配语义与截断排序行为（[snapshots/sdk/bash-tool/system-prompt.expected.md:13](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/system-prompt.expected.md#L13)）
+- 规定用 grep 工具搜索内容（[snapshots/sdk/bash-tool/system-prompt.expected.md:15](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/system-prompt.expected.md#L15)）
+- 规定后台作业的跟踪、免轮询与收尾要求（[snapshots/sdk/bash-tool/system-prompt.expected.md:17](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/system-prompt.expected.md#L17)）
+- 规定 web_search 的查询数量、外部不可信性与引用要求（[snapshots/sdk/bash-tool/system-prompt.expected.md:19](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/system-prompt.expected.md#L19)）
+- 规定 goal 工具的创建、读改、恢复与 blocked 判定条件（[snapshots/sdk/bash-tool/system-prompt.expected.md:21](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/system-prompt.expected.md#L21)）
+- 规定 workflow 工具的触发条件（[snapshots/sdk/bash-tool/system-prompt.expected.md:23](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/system-prompt.expected.md#L23)）
+- 规定 ralph 工具的触发条件与每轮开新子代理的语义，末行结束，无 subagent 段（[snapshots/sdk/bash-tool/system-prompt.expected.md:25](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/system-prompt.expected.md#L25)）
+
+### snapshots/sdk/bash-tool/tool-schemas.expected.json
+
+sdk-default 组合下发给模型的完整工具 schema 期望文件，`initial` 是首次请求的工具集，`changes` 记录会话中途的增删。
+
+- bash 工具描述固定每次调用开新 shell、无状态延续、需用 workdir 而非 cd，非零退出以 `[exit code: N]` 报告，长输出截尾并落盘，`run_in_background: true` 返回 job id（[snapshots/sdk/bash-tool/tool-schemas.expected.json:4-5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L4-L5)）
+- bash 描述规定沙箱拒绝后的唯一升级路径：同回合内以原命令加 `sandbox_permissions` 与一句 justification 重试一次，审批被拒即终局；审批被禁用时无此例外（[snapshots/sdk/bash-tool/tool-schemas.expected.json:5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L5)）
+- bash 参数含 command/description 必填，timeoutMs、workdir、run_in_background 可选，`sandbox_permissions` 枚举限定为 workspace-write 与 danger-full-access，且与 justification 配对（[snapshots/sdk/bash-tool/tool-schemas.expected.json:6-46](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L6-L46)）
+- create_goal 声明只接受直接人类请求推断出的长期目标，拒绝非人类与子代理权限，参数为 objective 与可选 max_goal_rounds（[snapshots/sdk/bash-tool/tool-schemas.expected.json:49-66](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L49-L66)）
+- edit 声明字面替换语义，带 replace_all 与同一套沙箱升级参数（[snapshots/sdk/bash-tool/tool-schemas.expected.json:69-108](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L69-L108)）
+- exit_plan_mode 声明仅在计划模式可用、须提交完整 markdown 计划，用户反馈经工具结果回流（[snapshots/sdk/bash-tool/tool-schemas.expected.json:111-125](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L111-L125)）
+- get_goal 无参，返回目标 id/revision/阶段/已完成轮数/轮数上限/阻塞原因与是否已武装下一轮（[snapshots/sdk/bash-tool/tool-schemas.expected.json:127-133](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L127-L133)）
+- glob 声明只返回文件、含隐藏与被忽略项、上限 100 条按修改时间排序、超限时告知完整列表落盘位置（[snapshots/sdk/bash-tool/tool-schemas.expected.json:135-153](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L135-L153)）
+- grep 声明 ripgrep 语法、按文件分组返回带行号的匹配、内联上限 250 条、超限落盘（[snapshots/sdk/bash-tool/tool-schemas.expected.json:155-177](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L155-L177)）
+- interrupt_agent 声明只停当前回合、已排队消息保留、其启动的代理继续运行，且对已结束代理是可接受的空操作（[snapshots/sdk/bash-tool/tool-schemas.expected.json:179-193](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L179-L193)）
+- job_kill 声明立即返回、作业实际停止后才结算为 killed，reason 会入日志并转发给作业（[snapshots/sdk/bash-tool/tool-schemas.expected.json:195-213](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L195-L213)）
+- job_list 无参，返回后台作业的 id、种类与状态（[snapshots/sdk/bash-tool/tool-schemas.expected.json:215-221](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L215-L221)）
+- job_output 声明流式作业只返回增量、终局作业结算后返回结果、每次响应以 `[status: ...]` 结尾，`wait` 与 `timeout_ms` 控制阻塞（[snapshots/sdk/bash-tool/tool-schemas.expected.json:223-245](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L223-L245)）
+- list_agents 声明 running/idle/ready 三态含义、快照不构成投递保证、读取失败的子代理以诊断形式返回，scope `descendants` 按前序遍历并标注父 id 与深度，且只有 depth-1 可 send_message（[snapshots/sdk/bash-tool/tool-schemas.expected.json:247-262](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L247-L262)）
+- ralph 声明前台运行、每轮开无对话种子的新子代理、只有有界结构化报告跨轮传递、达成或阻塞或轮数上限时返回（[snapshots/sdk/bash-tool/tool-schemas.expected.json:264-282](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L264-L282)）
+- read 声明返回带行号内容，offset 从 1 起、limit 默认 2000（[snapshots/sdk/bash-tool/tool-schemas.expected.json:284-306](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L284-L306)）
+- read_image 声明返回图片本身、大图在下次模型请求前被校验与降采样、且要求当前模型接受图片输入（[snapshots/sdk/bash-tool/tool-schemas.expected.json:308-322](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L308-L322)）
+- send_message 声明消息成为子代理下一回合、无法打断其在跑的回合、不返回子代理答复、失败即未投递（[snapshots/sdk/bash-tool/tool-schemas.expected.json:324-343](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L324-L343)）
+- skill 声明按会话技能目录里的精确名称加载完整指令（[snapshots/sdk/bash-tool/tool-schemas.expected.json:345-359](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L345-L359)）
+- str_replace_editor 声明 view/create/str_replace/insert 四命令、目录 view 深度 2、长输出以 `<response clipped>` 标记、以及 null 占位参数被视为省略（[snapshots/sdk/bash-tool/tool-schemas.expected.json:361-375](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L361-L375)）
+- str_replace_editor 的 file_text/insert_line/new_str/old_str/view_range 均以 `oneOf` 允许 null 占位，view_range 支持 `[start, -1]`（[snapshots/sdk/bash-tool/tool-schemas.expected.json:380-437](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L380-L437)）
+- subagent 声明子代理在独立上下文工作、只回结果不回中间步骤、不共享本对话且本调用同步等待（[snapshots/sdk/bash-tool/tool-schemas.expected.json:446-465](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L446-L465)）
+- subagent_fork 声明子代理继承本对话已完成回合（不含在飞回合），并可用 `run_in_background` 转为后台作业（[snapshots/sdk/bash-tool/tool-schemas.expected.json:467-490](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L467-L490)）
+- todo_write 声明每次必须整表替换、无部分更新，规定 in_progress/completed 的标记时机与三态枚举（[snapshots/sdk/bash-tool/tool-schemas.expected.json:492-529](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L492-L529)）
+- update_goal 要求携带精确 goal_id 与 revision，edit/pause/resume 需直接人类请求、complete 与 blocked 在自动续轮中亦可，blocked 在最小轮数前被拒（[snapshots/sdk/bash-tool/tool-schemas.expected.json:531-574](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L531-L574)）
+- web_search 声明必填 queries 数组接受 1–4 条并合并结果（[snapshots/sdk/bash-tool/tool-schemas.expected.json:576-593](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L576-L593)）
+- workflow 声明 meta 走参数而非代码、script 只能是纯 JS 函数体并以 `return` 结束，`agent`/`pipeline`/`parallel`/`phase`/`log`/`args` 六个钩子的失败语义（单项失败落 null、误用则直接终止脚本）与无文件系统/网络/定时器的约束（[snapshots/sdk/bash-tool/tool-schemas.expected.json:595-666](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L595-L666)）
+- write 声明创建或整体替换文件，并带同一套沙箱升级参数（[snapshots/sdk/bash-tool/tool-schemas.expected.json:669-700](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L669-L700)）
+- 断言 `changes` 为空数组，即本场景全程工具集不变（[snapshots/sdk/bash-tool/tool-schemas.expected.json:702](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/bash-tool/tool-schemas.expected.json#L702)）
+
+### snapshots/sdk/inline-image-prompt/session.jsonl
+
+inline-image-prompt 场景的会话日志，验证单张内联图片进入提示后的一轮对话。
+
+- 会话头与权限/沙箱/审批三条策略事件（danger-full-access 与 never）（[snapshots/sdk/inline-image-prompt/session.jsonl:1-4](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/inline-image-prompt/session.jsonl#L1-L4)）
+- 收件箱 splice 的用户消息把图片块记为 `attachmentId` 引用加 mediaType/width/height/bytes，文本块在图片前后各一段（[snapshots/sdk/inline-image-prompt/session.jsonl:5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/inline-image-prompt/session.jsonl#L5)）
+- 回合开始并把该消息从收件箱移除，随后以 append 进入模型可见面（[snapshots/sdk/inline-image-prompt/session.jsonl:6-9](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/inline-image-prompt/session.jsonl#L6-L9)）
+- 运行期上下文快照消息声明 danger-full-access 与审批被禁用（不得设置 `sandbox_permissions`）（[snapshots/sdk/inline-image-prompt/session.jsonl:10](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/inline-image-prompt/session.jsonl#L10)）
+- 标题回落生成，request/header 与 request/context 记录视觉模型路由（[snapshots/sdk/inline-image-prompt/session.jsonl:11-13](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/inline-image-prompt/session.jsonl#L11-L13)）
+- 单个文本块流式输出后以 finish stop 与 turn/end completed 结束（[snapshots/sdk/inline-image-prompt/session.jsonl:14-20](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/inline-image-prompt/session.jsonl#L14-L20)）
+
+### snapshots/sdk/inline-image-prompt/snapshot.yml
+
+inline-image-prompt 场景的清单文件。
+
+- 声明 profile 为 sdk、组合为 image、recording 为 authored，header class 为 image 且未 pin（[snapshots/sdk/inline-image-prompt/snapshot.yml:1-7](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/inline-image-prompt/snapshot.yml#L1-L7)）
+- 以 sha256 id、mediaType 与 base64 数据预置输入附件，供回放时按 attachmentId 还原图片（[snapshots/sdk/inline-image-prompt/snapshot.yml:8-12](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/inline-image-prompt/snapshot.yml#L8-L12)）
+
+### snapshots/sdk/max-tokens-continue/session.jsonl
+
+max-tokens-continue 场景的会话日志，覆盖工具调用流式输出中途被输出上限截断、随后另起一回合继续的路径。
+
+- 会话头与 danger-full-access / never 三条策略事件（[snapshots/sdk/max-tokens-continue/session.jsonl:1-4](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/max-tokens-continue/session.jsonl#L1-L4)）
+- 用户任务入收件箱、回合开始后移除，并以 append 进入可见面（[snapshots/sdk/max-tokens-continue/session.jsonl:5-9](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/max-tokens-continue/session.jsonl#L5-L9)）
+- 第一步先完整输出一个文本块，再开启一个 tool-call 块并只收到半截参数 `{"command":"echo demo > `（[snapshots/sdk/max-tokens-continue/session.jsonl:14-18](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/max-tokens-continue/session.jsonl#L14-L18)）
+- finish 的 reason 为 `max-tokens`，并携带 replayState 记录 provider 侧 stopReason `length` 与当时的块列表（text 与 tool-call 两块）（[snapshots/sdk/max-tokens-continue/session.jsonl:20](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/max-tokens-continue/session.jsonl#L20)）
+- 落地的 assistant/message 只保留完整的 text 块、丢弃未完成的 tool-call 块，其 replayState 的 blocks 仅剩 text，因此没有 tool/call 事件、也没有工具被执行（[snapshots/sdk/max-tokens-continue/session.jsonl:21](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/max-tokens-continue/session.jsonl#L21)）
+- turn/end 的 reason 为 `max-tokens`，循环在本回合停止而不自动续步（[snapshots/sdk/max-tokens-continue/session.jsonl:22-23](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/max-tokens-continue/session.jsonl#L22-L23)）
+- 新的用户消息经收件箱 splice 开启第二回合，且第二回合不再写 request/header 与 request/context（[snapshots/sdk/max-tokens-continue/session.jsonl:24-29](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/max-tokens-continue/session.jsonl#L24-L29)）
+- 第二回合以完整文本块与 finish stop、turn/end completed 收尾（[snapshots/sdk/max-tokens-continue/session.jsonl:30-36](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/max-tokens-continue/session.jsonl#L30-L36)）
+
+### snapshots/sdk/max-tokens-continue/snapshot.yml
+
+max-tokens-continue 场景的清单文件。
+
+- 声明 profile 为 sdk、组合为 default、recording 为 authored，header class 为 default 且未 pin（[snapshots/sdk/max-tokens-continue/snapshot.yml:1-7](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/max-tokens-continue/snapshot.yml#L1-L7)）
+
+### snapshots/sdk/multi-turn/session.jsonl
+
+multi-turn 场景的实录会话日志，覆盖同一会话内连续两个用户回合。
+
+- 会话头与 danger-full-access / never 三条策略事件（[snapshots/sdk/multi-turn/session.jsonl:1-4](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/multi-turn/session.jsonl#L1-L4)）
+- 第一条用户消息入收件箱、开回合后移除、以 append 进可见面（[snapshots/sdk/multi-turn/session.jsonl:5-9](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/multi-turn/session.jsonl#L5-L9)）
+- 运行期上下文快照消息与回落标题只在第一回合产生（[snapshots/sdk/multi-turn/session.jsonl:10-11](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/multi-turn/session.jsonl#L10-L11)）
+- 第一回合的 reasoning 与 text 流式输出，usage 记录 cacheReadTokens 为 0（[snapshots/sdk/multi-turn/session.jsonl:14-20](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/multi-turn/session.jsonl#L14-L20)）
+- 第二条用户消息经收件箱 splice 开启第二回合，且第二回合不再写 request/header 与 request/context（[snapshots/sdk/multi-turn/session.jsonl:25-29](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/multi-turn/session.jsonl#L25-L29)）
+- 第二回合 usage 的 inputTokens 降为 64 而 cacheReadTokens 为 2816，记录了跨回合的前缀缓存命中（[snapshots/sdk/multi-turn/session.jsonl:37](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/multi-turn/session.jsonl#L37)）
+- 两回合各以 finish stop 与 turn/end completed 结束（[snapshots/sdk/multi-turn/session.jsonl:38-41](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/multi-turn/session.jsonl#L38-L41)）
+
+### snapshots/sdk/multi-turn/snapshot.yml
+
+multi-turn 场景的清单文件。
+
+- 声明 profile 为 sdk、组合为 default、recording 为 live，header class 为 default 且未 pin（[snapshots/sdk/multi-turn/snapshot.yml:1-7](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/multi-turn/snapshot.yml#L1-L7)）
+
+### snapshots/sdk/persistent-tools/cordis.snapshot.yml
+
+persistent-tools 场景在无密钥回放下叠加的补丁层。
+
+- 禁用 `llm-deepseek` 条目（[snapshots/sdk/persistent-tools/cordis.snapshot.yml:3-5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.snapshot.yml#L3-L5)）
+- 插入 `llm-replay` 并声明 provider 与模型 `deepseek-v4-flash`（[snapshots/sdk/persistent-tools/cordis.snapshot.yml:7-15](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.snapshot.yml#L7-L15)）
+
+### snapshots/sdk/persistent-tools/cordis.yml
+
+persistent-tools 场景的 SDK 定制组合配置，把模型可见工具裁剪到只剩持久 bash 与字符串编辑器。
+
+- 配置 llm-deepseek 的密钥环境变量名、流空闲超时 172800000 毫秒，并让模型 id 与 contextWindow 由 `DSH_MODEL` / `DSH_CONTEXT_WINDOW` 环境变量决定（[snapshots/sdk/persistent-tools/cordis.yml:5-12](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L5-L12)）
+- 沙箱策略设为 danger-full-access，工作区根取 `process.cwd()`（[snapshots/sdk/persistent-tools/cordis.yml:14-18](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L14-L18)）
+- 审批策略设为 never，并禁用 permission-presets（[snapshots/sdk/persistent-tools/cordis.yml:20-27](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L20-L27)）
+- 禁用 bash/pwsh/fs 三个沙箱插件（[snapshots/sdk/persistent-tools/cordis.yml:29-39](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L29-L39)）
+- 禁用默认的 tool-bash 与 tool-pwsh，为持久 bash 让位（[snapshots/sdk/persistent-tools/cordis.yml:41-47](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L41-L47)）
+- 禁用 agent-instructions，使仓库指令文件不再进入模型可见内容（[snapshots/sdk/persistent-tools/cordis.yml:49-51](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L49-L51)）
+- 禁用 skill、skill-filesystem 与 tool-skill，移除技能目录与 skill 工具（[snapshots/sdk/persistent-tools/cordis.yml:53-63](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L53-L63)）
+- 禁用 tool-jobs、tool-fs 与 tool-fs-search，移除后台作业与文件读写/检索工具（[snapshots/sdk/persistent-tools/cordis.yml:65-75](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L65-L75)）
+- 禁用 subagent 控制、list-agents、subagent、subagent-fork 与 subagent-report 全部委派工具（[snapshots/sdk/persistent-tools/cordis.yml:77-95](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L77-L95)）
+- 禁用 tool-workflow、tool-todo、tool-goal、tool-ralph、tool-web 与 plan-mode（[snapshots/sdk/persistent-tools/cordis.yml:97-119](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L97-L119)）
+- 关闭系统提示词的 harness 身份行，persona 由 `DSH_SYSTEM_PROMPT` 环境变量决定并带默认值（[snapshots/sdk/persistent-tools/cordis.yml:121-125](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L121-L125)）
+- 会话持久化根取 `dshHomePath('sessions')`、压缩关闭（[snapshots/sdk/persistent-tools/cordis.yml:127-131](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L127-L131)）
+- 插入进程内的 bash-local 与 fs-local 提供者，fs-local 的 cwd 取 `process.cwd()`（[snapshots/sdk/persistent-tools/cordis.yml:133-140](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L133-L140)）
+- 插入 terminal 与 terminal-bash（超时 300000 毫秒），提供跨调用存活的 shell 会话（[snapshots/sdk/persistent-tools/cordis.yml:142-148](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L142-L148)）
+- 插入 `tool-bash-persistent` 并用 config.description 整段覆盖模型看到的 bash 工具描述（声明状态跨调用持久、无网络、建议后台跑长命令等）（[snapshots/sdk/persistent-tools/cordis.yml:150-162](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/cordis.yml#L150-L162)）
+
+### snapshots/sdk/persistent-tools/notifications.expected.jsonl
+
+persistent-tools 场景 SDK 服务端推给客户端的期望通知流。
+
+- 首条通知外推收件箱 splice 事件，seq 从 0 起（[snapshots/sdk/persistent-tools/notifications.expected.jsonl:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/notifications.expected.jsonl#L1)）
+- 推送 `session.status` running，随后 turn/start、收件箱移除与 step/start（[snapshots/sdk/persistent-tools/notifications.expected.jsonl:2-5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/notifications.expected.jsonl#L2-L5)）
+- 用户消息与运行期上下文快照消息（danger-full-access、审批禁用）外推（[snapshots/sdk/persistent-tools/notifications.expected.jsonl:6-7](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/notifications.expected.jsonl#L6-L7)）
+- 标题、request/header 与 request/context 外推（[snapshots/sdk/persistent-tools/notifications.expected.jsonl:8-10](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/notifications.expected.jsonl#L8-L10)）
+- 第 1 步的 tool-call 块、完整参数、usage、finish `tool-calls` 与 assistant/message 依次外推（[snapshots/sdk/persistent-tools/notifications.expected.jsonl:11-16](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/notifications.expected.jsonl#L11-L16)）
+- tool/call 与 tool/result 外推，结果为持久 shell 中 `COUNT=1 CWD=/tmp` 且 isError 为 false（[snapshots/sdk/persistent-tools/notifications.expected.jsonl:17-18](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/notifications.expected.jsonl#L17-L18)）
+- 每次工具结果后循环再转一步，step/end 与 step/start 成对外推（[snapshots/sdk/persistent-tools/notifications.expected.jsonl:19-20](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/notifications.expected.jsonl#L19-L20)）
+- `exit 9` 的工具结果外推为 `exit\n[shell exited: code 9]` 加一句说明持久 shell 已重置、下次调用从工作区以全新目录与环境开始（[snapshots/sdk/persistent-tools/notifications.expected.jsonl:78](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/notifications.expected.jsonl#L78)）
+- 第 8 步输出最终文本 `PERSISTENT_TOOLS_OK` 并以 finish stop、turn/end completed 结束（[snapshots/sdk/persistent-tools/notifications.expected.jsonl:80-88](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/notifications.expected.jsonl#L80-L88)）
+- 末条通知把 `session.status` 推回 idle（[snapshots/sdk/persistent-tools/notifications.expected.jsonl:89](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/notifications.expected.jsonl#L89)）
+
+### snapshots/sdk/persistent-tools/result.expected.json
+
+persistent-tools 场景 SDK 调用的期望返回值。
+
+- 断言返回体只含 sessionId 与 finalResponse，finalResponse 为 `PERSISTENT_TOOLS_OK`（[snapshots/sdk/persistent-tools/result.expected.json:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/result.expected.json#L1)）
+
+### snapshots/sdk/persistent-tools/session.jsonl
+
+persistent-tools 场景的实录会话日志，一个回合内连做 8 步工具调用。
+
+- 会话头记录 version 0、id、createdAt、cwd 与 delegationDepth，且该组合下不写权限预设/沙箱模式/审批策略事件（[snapshots/sdk/persistent-tools/session.jsonl:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/session.jsonl#L1)）
+- 用户任务入收件箱、开回合后移除、以 append 进可见面（[snapshots/sdk/persistent-tools/session.jsonl:2-6](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/session.jsonl#L2-L6)）
+- 运行期上下文快照消息声明 danger-full-access 与审批被禁用（[snapshots/sdk/persistent-tools/session.jsonl:7](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/session.jsonl#L7)）
+- 标题回落生成，request/header 与 request/context 记录 provider/model（[snapshots/sdk/persistent-tools/session.jsonl:8-10](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/session.jsonl#L8-L10)）
+- 第 1 步 bash 调用 `cd /tmp` 并导出环境变量，结果为 `COUNT=1 CWD=/tmp`（[snapshots/sdk/persistent-tools/session.jsonl:11-18](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/session.jsonl#L11-L18)）
+- 第 2 步不重设变量与目录，结果为 `COUNT=2 CWD=/tmp`，记录了 shell 状态跨调用存活（[snapshots/sdk/persistent-tools/session.jsonl:21-28](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/session.jsonl#L21-L28)）
+- 第 3 步执行带 sleep 的管道命令，结果只有 `delayed`，记录了输出在命令真正结束后才收齐（[snapshots/sdk/persistent-tools/session.jsonl:31-38](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/session.jsonl#L31-L38)）
+- 第 4 步 str_replace_editor 的 create 携带全部 null 占位参数，结果为 `New file created successfully at: ...`（[snapshots/sdk/persistent-tools/session.jsonl:41-48](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/session.jsonl#L41-L48)）
+- 第 5 步 view 返回带行号的文件内容并在开头声明总行数（[snapshots/sdk/persistent-tools/session.jsonl:51-58](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/session.jsonl#L51-L58)）
+- 第 6 步 str_replace 用字面制表符匹配并替换，结果为 `The file ... has been edited successfully.`（[snapshots/sdk/persistent-tools/session.jsonl:61-68](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/session.jsonl#L61-L68)）
+- 第 7 步 `exit 9` 的结果把退出码以 `[shell exited: code 9]` 交回模型，并追加一句说明持久 shell 已重置、下次调用从工作区以全新目录与环境开始（[snapshots/sdk/persistent-tools/session.jsonl:71-78](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/session.jsonl#L71-L78)）
+- 第 8 步输出终局文本 `PERSISTENT_TOOLS_OK`，以 finish stop 与 turn/end completed 结束循环（[snapshots/sdk/persistent-tools/session.jsonl:81-88](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/session.jsonl#L81-L88)）
+
+### snapshots/sdk/persistent-tools/snapshot.yml
+
+persistent-tools 场景的清单文件。
+
+- 声明 profile 为 sdk、组合为 sdk-minimal、recording 为 live，header class 为 sdk-minimal 且 `pin: true`（本场景拥有该类的 system-prompt 与 tool-schemas 期望文件）（[snapshots/sdk/persistent-tools/snapshot.yml:1-8](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/snapshot.yml#L1-L8)）
+- 声明 `workspace.final: true`，即 `workspace.expected/` 拥有完整的最终工作区状态（[snapshots/sdk/persistent-tools/snapshot.yml:9-10](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/snapshot.yml#L9-L10)）
+
+### snapshots/sdk/persistent-tools/system-prompt.expected.md
+
+sdk-minimal 组合下渲染后的系统提示词期望文本。
+
+- 整份系统提示词只有一行由环境变量注入的 persona，既无 harness 身份行也无任何工具使用说明段（[snapshots/sdk/persistent-tools/system-prompt.expected.md:1](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/system-prompt.expected.md#L1)）
+
+### snapshots/sdk/persistent-tools/tool-schemas.expected.json
+
+sdk-minimal 组合下发给模型的完整工具 schema 期望文件。
+
+- `initial` 只含两个工具，其余全部被组合配置裁掉（[snapshots/sdk/persistent-tools/tool-schemas.expected.json:2-3](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/tool-schemas.expected.json#L2-L3)）
+- bash 工具的描述是组合配置里整段覆盖的文本（声明状态跨调用持久、无网络、建议后台跑长命令），已不含默认描述里的沙箱升级规则（[snapshots/sdk/persistent-tools/tool-schemas.expected.json:4-5](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/tool-schemas.expected.json#L4-L5)）
+- bash 参数只剩必填的 command，没有 workdir、timeoutMs、run_in_background 与 sandbox_permissions（[snapshots/sdk/persistent-tools/tool-schemas.expected.json:6-17](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/tool-schemas.expected.json#L6-L17)）
+- str_replace_editor 声明 view/create/str_replace/insert 四命令、状态跨调用持久、目录 view 深度 2、长输出以 `<response clipped>` 标记、null 占位视为省略（[snapshots/sdk/persistent-tools/tool-schemas.expected.json:20-34](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/tool-schemas.expected.json#L20-L34)）
+- str_replace_editor 的 file_text/insert_line/new_str/old_str/view_range 以 `oneOf` 允许 null，required 只有 command 与 path（[snapshots/sdk/persistent-tools/tool-schemas.expected.json:39-101](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/tool-schemas.expected.json#L39-L101)）
+- 断言 `changes` 为空数组，即全程工具集不变（[snapshots/sdk/persistent-tools/tool-schemas.expected.json:105](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/snapshots/sdk/persistent-tools/tool-schemas.expected.json#L105)）
 
 ### snapshots/sdk/persistent-tools/workspace.expected/note.txt
 

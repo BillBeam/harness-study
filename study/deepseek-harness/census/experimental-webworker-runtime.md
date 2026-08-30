@@ -6,7 +6,7 @@ title: deepseek-harness 普查 · packages/experimental/webworker-runtime
 
 # packages/experimental/webworker-runtime
 
-钉住提交 `cd5ef8148158c3a752a658978873241fdf8e2bbc` 上这一组的逐文件机制普查，共 83 个文件、570 条证据行。判据、读法与全仓库口径见 [`../census-index.md`](../census-index.md)。
+钉住提交 `cd5ef8148158c3a752a658978873241fdf8e2bbc` 上这一组的逐文件机制普查，共 83 个文件、774 条证据行。判据、读法与全仓库口径见 [`../census-index.md`](../census-index.md)。
 
 ### packages/experimental/webworker-runtime/README.md
 
@@ -744,6 +744,320 @@ Worker 自己的进程表，`node:child_process` 替身从一侧登记条目、`
 - `afterYield` 在生成器恢复时先还原快照再把传入值原样交回（[packages/experimental/webworker-runtime/src/polyfill/async-context/als-runtime.ts:65-68](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/polyfill/async-context/als-runtime.ts#L65-L68)）
 - `iterator` 优先取 `Symbol.asyncIterator`，退而取 `Symbol.iterator` 并包成 async-from-sync 适配器，两者皆无时抛 `TypeError`（[packages/experimental/webworker-runtime/src/polyfill/async-context/als-runtime.ts:69-92](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/polyfill/async-context/als-runtime.ts#L69-L92)）
 - `close` 调用迭代器的 `return`，抛错时吞掉并返回 undefined（[packages/experimental/webworker-runtime/src/polyfill/async-context/als-runtime.ts:93-100](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/polyfill/async-context/als-runtime.ts#L93-L100)）
+
+### packages/experimental/webworker-runtime/src/polyfill/async-context/async-context-hooks.ts
+
+浏览器 worker 里的异步上下文补丁层，在回调注册处捕获 store、在回调执行处恢复，由 worker 入口在宿主树启动前调用一次。
+
+- `bindSlot` 只包装函数型处理器，非函数槽位原样返回，包装后的回调在 `runWithAsyncContext(snapshot, …)` 下执行（[packages/experimental/webworker-runtime/src/polyfill/async-context/async-context-hooks.ts:32-35](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/polyfill/async-context/async-context-hooks.ts#L32-L35)）
+- `installed` 标志使安装只生效一次，重复调用直接返回（[packages/experimental/webworker-runtime/src/polyfill/async-context/async-context-hooks.ts:41-44](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/polyfill/async-context/async-context-hooks.ts#L41-L44)）
+- 替换 `Promise.prototype.then`：在注册时刻捕获快照，快照为 undefined 时直接走原生 `then`，否则分别包装 fulfilled/rejected 两个槽位并仍返回原生 promise（[packages/experimental/webworker-runtime/src/polyfill/async-context/async-context-hooks.ts:46-61](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/polyfill/async-context/async-context-hooks.ts#L46-L61)）
+- 替换 `globalThis.queueMicrotask`，把回调经 `bindAsyncContext` 绑定后再交给原生实现（[packages/experimental/webworker-runtime/src/polyfill/async-context/async-context-hooks.ts:63-66](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/polyfill/async-context/async-context-hooks.ts#L63-L66)）
+- 替换 `globalThis.fetch`，在调用点捕获快照并用原生 `then` 把响应与拒绝续接都放回该快照中执行（[packages/experimental/webworker-runtime/src/polyfill/async-context/async-context-hooks.ts:68-79](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/polyfill/async-context/async-context-hooks.ts#L68-L79)）
+
+### packages/experimental/webworker-runtime/src/shell/ast.ts
+
+worker 内 shell 的语法树类型别名模块，把 `@yarnpkg/parsers` 未导出的三个成员从已发布类型中派生出来。
+
+- 无运行期机制
+
+### packages/experimental/webworker-runtime/src/shell/expand.ts
+
+worker 内 shell 的词展开：把一个解析后的参数变成程序 argv 里的零个或多个字段，被 `interpret.ts` 和 `builtins.ts` 使用。
+
+- `GLOB_PATTERN` 与 `isGlobPattern` 决定一个词是否被语法解析成 glob 段（[packages/experimental/webworker-runtime/src/shell/expand.ts:14-25](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L14-L25)）
+- `readVariable` 为 `?`/`$`/`0`/`#`/`@`/`*` 返回固定取值，其余名字先查 shell 变量再查环境（[packages/experimental/webworker-runtime/src/shell/expand.ts:37-48](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L37-L48)）
+- `arithmetic` 递归求值 `$(( … ))`，未设变量按 0 处理，除法取整（[packages/experimental/webworker-runtime/src/shell/expand.ts:51-60](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L51-L60)）
+- `safeList` 把目录列举失败吞成空数组，使不存在或非目录的路径只是不产生匹配（[packages/experimental/webworker-runtime/src/shell/expand.ts:77-83](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L77-L83)）
+- glob 起点按模式是否以 `/` 开头选择根目录或 cwd，并同时携带复现调用者拼写的 display 前缀（[packages/experimental/webworker-runtime/src/shell/expand.ts:86](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L86)）
+- `**` 段用栈展开成当前目录及其下所有目录（[packages/experimental/webworker-runtime/src/shell/expand.ts:91-104](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L91-L104)）
+- 非通配段必须 `stat` 存在才进入下一层前沿（[packages/experimental/webworker-runtime/src/shell/expand.ts:105-110](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L105-L110)）
+- 通配段用 picomatch 逐条目匹配，`dot` 由段是否以 `.` 开头决定，非末段只保留目录（[packages/experimental/webworker-runtime/src/shell/expand.ts:111-116](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L111-L116)）
+- glob 结果去重、去掉尾部斜杠、剔除空串并排序后返回（[packages/experimental/webworker-runtime/src/shell/expand.ts:122](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L122)）
+- `expandArgument` 用 `current === undefined` 表示尚未开始一个字段，未设的未引用变量因此不贡献任何 argv 项（[packages/experimental/webworker-runtime/src/shell/expand.ts:151-157](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L151-L157)）
+- `appendSplit` 按空白把未引用展开的文本切成多个字段（[packages/experimental/webworker-runtime/src/shell/expand.ts:158-167](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L158-L167)）
+- 段类型分派：text 直接追加、arithmetic 转字符串、variable 与 shell 替换按 `quoted` 决定是否分词（[packages/experimental/webworker-runtime/src/shell/expand.ts:169-188](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L169-L188)）
+- glob 段无匹配时原样保留模式文本，有匹配时每个匹配成为独立字段（[packages/experimental/webworker-runtime/src/shell/expand.ts:189-204](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L189-L204)）
+- `expandVariable` 把空串与未设一并视为未设，据此选择 `:-` 默认值或 `:+` 替代值（[packages/experimental/webworker-runtime/src/shell/expand.ts:212-221](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L212-L221)）
+- `joinArguments` 把 `:-`/`:+` 操作数递归展开后用空格连成一个字符串（[packages/experimental/webworker-runtime/src/shell/expand.ts:224-228](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/expand.ts#L224-L228)）
+
+### packages/experimental/webworker-runtime/src/shell/fs-access.ts
+
+宿主线程内 shell 运行使用的文件系统实现与共享的路径、诊断辅助，直接架在已挂载的 VFS 之上。
+
+- `resolveIn` 把命令行写下的路径按 cwd 解析成绝对 VFS 路径（[packages/experimental/webworker-runtime/src/shell/fs-access.ts:22-24](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/fs-access.ts#L22-L24)）
+- `describeFailure` 按错误 `code` 把失败改写成 `program: path: reason` 的单行诊断（[packages/experimental/webworker-runtime/src/shell/fs-access.ts:35-49](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/fs-access.ts#L35-L49)）
+- `filesystemError` 构造带 `code`/`path`/`syscall` 的 Node 形状错误，供本层与 worker 传输侧抛出（[packages/experimental/webworker-runtime/src/shell/fs-access.ts:59-66](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/fs-access.ts#L59-L66)）
+- `statsOf` 把 VFS stats 投影成程序可读的 `directory`/`size`/`mtimeMs`（[packages/experimental/webworker-runtime/src/shell/fs-access.ts:69-71](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/fs-access.ts#L69-L71)）
+- `hostFileSystem().stat` 把任何 stat 失败一律转为 undefined（[packages/experimental/webworker-runtime/src/shell/fs-access.ts:79-87](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/fs-access.ts#L79-L87)）
+- `list` 对目录名排序并逐条补上 `directory` 标记（[packages/experimental/webworker-runtime/src/shell/fs-access.ts:92-99](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/fs-access.ts#L92-L99)）
+- `readText` 对目录先抛 EISDIR，再按 utf8 读取（[packages/experimental/webworker-runtime/src/shell/fs-access.ts:100-103](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/fs-access.ts#L100-L103)）
+- `writeText` 按 `append` 在 VFS 上分派 append 或覆盖写（[packages/experimental/webworker-runtime/src/shell/fs-access.ts:104-108](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/fs-access.ts#L104-L108)）
+- `mkdir`/`remove`/`rename` 直接落到 VFS 的同步方法上（[packages/experimental/webworker-runtime/src/shell/fs-access.ts:109-120](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/fs-access.ts#L109-L120)）
+
+### packages/experimental/webworker-runtime/src/shell/interpret.ts
+
+worker 内 shell 的解释器：解析并执行一整条命令行的结构，命令本体交给 `./programs/` 的命令表。
+
+- 三个状态与深度常量：中止报 130、命令未找到报 127、命令替换最深 16 层（[packages/experimental/webworker-runtime/src/shell/interpret.ts:22-28](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L22-L28)）
+- `runShellCommand` 解析失败时向 stderr 写 `bash: syntax error:` 并以状态 2 结束（[packages/experimental/webworker-runtime/src/shell/interpret.ts:74-85](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L74-L85)）
+- `runShellProgram` 直接按 argv 查表：查不到写 `command not found` 并返回 127（[packages/experimental/webworker-runtime/src/shell/interpret.ts:97-104](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L97-L104)）
+- `runShellProgram` 在启动前检查已中止的信号并直接返回 130（[packages/experimental/webworker-runtime/src/shell/interpret.ts:105](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L105)）
+- 程序抛出被捕获成 `bash: <name>: <message>` 与状态 1（[packages/experimental/webworker-runtime/src/shell/interpret.ts:106-111](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L106-L111)）
+- `startRun` 建立初始 shell 状态并把每次写入同时送入缓冲区和 `onOutput` 回调，settle 时返回完整 stdout/stderr（[packages/experimental/webworker-runtime/src/shell/interpret.ts:115-145](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L115-L145)）
+- `line` 在每条命令前检查中止信号，`&` 不产生后台作业而是就地跑完，`exitRequested` 一经设置立即结束整行（[packages/experimental/webworker-runtime/src/shell/interpret.ts:163-174](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L163-L174)）
+- `commandLine` 先把右嵌套的 `&&`/`||` 链摊平，再自左向右按上一条状态决定跳过或执行（[packages/experimental/webworker-runtime/src/shell/interpret.ts:184-198](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L184-L198)）
+- `pipeline` 把各段串成字符串传递：非末段的 stdout 进缓冲并成为下一段 stdin，`|&` 让该段 stderr 也并入缓冲，末段直接写调用者的 io（[packages/experimental/webworker-runtime/src/shell/interpret.ts:201-222](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L201-L222)）
+- `command` 分派四种节点：裸赋值写入状态、subshell 在状态副本上执行、group 共享状态、command 走程序调用（[packages/experimental/webworker-runtime/src/shell/interpret.ts:225-240](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L225-L240)）
+- `program` 把参数展开进 argv、把重定向单独收集、把前缀赋值展开成 prefix（[packages/experimental/webworker-runtime/src/shell/interpret.ts:243-254](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L243-L254)）
+- argv 为空时前缀赋值落回 shell 状态并返回 0（[packages/experimental/webworker-runtime/src/shell/interpret.ts:256-259](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L256-L259)）
+- 有前缀赋值时程序在一份带附加环境的状态副本上运行，因而无法改变调用者目录（[packages/experimental/webworker-runtime/src/shell/interpret.ts:262-264](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L262-L264)）
+- 命令表中不存在的名字写 `command not found` 并返回 127（[packages/experimental/webworker-runtime/src/shell/interpret.ts:266-271](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L266-L271)）
+- 程序自身抛出被就地捕获成诊断行与状态 1，不向上传播（[packages/experimental/webworker-runtime/src/shell/interpret.ts:272-280](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L272-L280)）
+- 重定向目标展开后多于一个或为空时写 `ambiguous redirect` 并返回 1（[packages/experimental/webworker-runtime/src/shell/interpret.ts:299-306](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L299-L306)）
+- `<` 读文件作为 stdin，`<<<` 用目标文本加换行作为 stdin（[packages/experimental/webworker-runtime/src/shell/interpret.ts:309-314](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L309-L314)）
+- `>` 在重定向时刻先清空文件，随后写入按 promise 链串行 append，`fd` 为 2 时改写 stderr 否则改写 stdout（[packages/experimental/webworker-runtime/src/shell/interpret.ts:315-331](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L315-L331)）
+- `>&` 只接受 stdout 与 stderr 之间的复制，其他描述符组合写不支持并返回 1；`<&` 一律不支持（[packages/experimental/webworker-runtime/src/shell/interpret.ts:332-346](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L332-L346)）
+- 重定向建立过程中的文件系统失败被改写成 `describeFailure` 诊断并返回 1（[packages/experimental/webworker-runtime/src/shell/interpret.ts:347-350](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L347-L350)）
+- 命令体执行完后先等待该重定向集合排队的全部写入，再报告状态（[packages/experimental/webworker-runtime/src/shell/interpret.ts:352-354](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L352-L354)）
+- `$( … )` 在深度加一的新解释器与状态副本上执行，超过深度上限抛错，丢弃其 stderr 并剥掉输出尾部换行（[packages/experimental/webworker-runtime/src/shell/interpret.ts:357-373](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L357-L373)）
+- `assignedValue` 把赋值右值展开后的多个字段用空格连接（[packages/experimental/webworker-runtime/src/shell/interpret.ts:376-379](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L376-L379)）
+- `assign` 让已在环境中的名字继续留在环境，其余落进 shell 变量（[packages/experimental/webworker-runtime/src/shell/interpret.ts:386-389](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/interpret.ts#L386-L389)）
+
+### packages/experimental/webworker-runtime/src/shell/process/child.ts
+
+进程 worker 一侧的入口：收到 `ShellStartFrame` 的新 worker 在此跑完一条命令并关闭自己，文件系统全部经消息回落到宿主。
+
+- 收到 `shell-signal` 帧时中止本地 AbortController，使命令在下一个命令边界停止（[packages/experimental/webworker-runtime/src/shell/process/child.ts:36-43](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/child.ts#L36-L43)）
+- 收到 `fs-reply` 帧时按 id 结算挂起的调用，失败分支用 `filesystemError` 重建带 code 的错误（[packages/experimental/webworker-runtime/src/shell/process/child.ts:44-50](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/child.ts#L44-L50)）
+- `call` 自增 id、登记 promise 并投递 `fs-call` 帧（[packages/experimental/webworker-runtime/src/shell/process/child.ts:52-58](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/child.ts#L52-L58)）
+- 七个文件系统方法全部实现为对宿主的消息调用（[packages/experimental/webworker-runtime/src/shell/process/child.ts:60-68](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/child.ts#L60-L68)）
+- 运行选项把每次输出即时投递为 `shell-out` 帧（[packages/experimental/webworker-runtime/src/shell/process/child.ts:70-77](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/child.ts#L70-L77)）
+- 起始帧带不带 `script` 决定走 `runShellProgram` 还是 `runShellCommand`（[packages/experimental/webworker-runtime/src/shell/process/child.ts:78-80](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/child.ts#L78-L80)）
+- 命令结束后投递 `shell-exit` 并关闭 worker；解释器本身抛出时先写一行 stderr、再以状态 1 退出并关闭（[packages/experimental/webworker-runtime/src/shell/process/child.ts:81-93](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/child.ts#L81-L93)）
+
+### packages/experimental/webworker-runtime/src/shell/process/host.ts
+
+宿主 worker 一侧的进程启动与监管：能造 Worker 时把命令放进独立 worker，否则在本线程内联执行。
+
+- `canSpawnWorker` 用 `Worker` 构造器与 `self.location.href` 的存在决定走哪条路径（[packages/experimental/webworker-runtime/src/shell/process/host.ts:57-59](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/host.ts#L57-L59)）
+- `startProcess` 据此在 worker 进程与内联进程之间分派（[packages/experimental/webworker-runtime/src/shell/process/host.ts:66-68](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/host.ts#L66-L68)）
+- `serveFilesystemCall` 按 op 名分派到宿主文件系统，联合类型之外的名字抛错而不是返回 undefined（[packages/experimental/webworker-runtime/src/shell/process/host.ts:71-93](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/host.ts#L71-L93)）
+- worker 进程从本 worker 自身的 URL 再造一个 module worker（[packages/experimental/webworker-runtime/src/shell/process/host.ts:101](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/host.ts#L101)）
+- `settle` 保证只结算一次，并在结算时 `terminate()` 该 worker 后再回调 `onExit`（[packages/experimental/webworker-runtime/src/shell/process/host.ts:102-108](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/host.ts#L102-L108)）
+- 消息处理把 `shell-out` 转给 `onOutput`、`shell-exit` 交给结算，其余按文件系统调用服务并回 `fs-reply`，失败时携带 `code` 与 message（[packages/experimental/webworker-runtime/src/shell/process/host.ts:110-130](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/host.ts#L110-L130)）
+- worker 的 `error` 事件写一行 stderr 并以状态 1 结算（[packages/experimental/webworker-runtime/src/shell/process/host.ts:131-134](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/host.ts#L131-L134)）
+- 起始帧携带 script/argv/cwd/env/stdin 投递给新 worker，决定它的角色与运行内容（[packages/experimental/webworker-runtime/src/shell/process/host.ts:136-144](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/host.ts#L136-L144)）
+- `interrupt` 投递 `shell-signal`，`destroy` 直接以状态 130 结算并终止 worker（[packages/experimental/webworker-runtime/src/shell/process/host.ts:146-151](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/host.ts#L146-L151)）
+- 内联进程在本线程跑同一条命令，退出与失败各自回调 `onExit`，`interrupt` 与 `destroy` 都只是 abort 信号（[packages/experimental/webworker-runtime/src/shell/process/host.ts:155-177](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/host.ts#L155-L177)）
+
+### packages/experimental/webworker-runtime/src/shell/process/landlock.ts
+
+worker 内实现的 `landlock-run` 启动器：解析原生启动器的 argv 文法，并按授权路径构造一份进程内的受限文件系统。
+
+- `parseLandlockArguments` 解析 `--probe`（不允许伴随其他参数）、`--ro`/`--rw` 路径对、`--` 之后的 argv，未知参数与缺失 argv 都抛 `LandlockLauncherError`（[packages/experimental/webworker-runtime/src/shell/process/landlock.ts:26-50](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/landlock.ts#L26-L50)）
+- `vfsPath` 把宿主的 `/tmp` 与其子路径重写到 `DSH_TMP` 下（[packages/experimental/webworker-runtime/src/shell/process/landlock.ts:52-59](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/landlock.ts#L52-L59)）
+- `contains` 判定一个规范化路径是否落在某授权根之内（[packages/experimental/webworker-runtime/src/shell/process/landlock.ts:62-64](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/landlock.ts#L62-L64)）
+- `deny` 抛出 EACCES 形状的错误（[packages/experimental/webworker-runtime/src/shell/process/landlock.ts:66-68](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/landlock.ts#L66-L68)）
+- `launcherFailure` 把解析或授权失败转成退出码 125 并在 stderr 前缀 `landlock-run:`（[packages/experimental/webworker-runtime/src/shell/process/landlock.ts:76-85](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/landlock.ts#L76-L85)）
+- `normalizeGrant` 拒绝空路径并要求授权根实际存在（`/dev` 与 `/dev/null` 除外）（[packages/experimental/webworker-runtime/src/shell/process/landlock.ts:99-108](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/landlock.ts#L99-L108)）
+- `checkedPath` 对 `/dev/null/` 下的路径抛 ENOTDIR，`readPath`/`writePath` 分别按只读集合与读写集合判定并拒绝越界访问（[packages/experimental/webworker-runtime/src/shell/process/landlock.ts:111-125](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/landlock.ts#L111-L125)）
+- 受限文件系统的七个方法在授权检查之后委派给底层，并把 `/dev` 与 `/dev/null` 虚拟成固定的 stat、目录项、空读与吞写（[packages/experimental/webworker-runtime/src/shell/process/landlock.ts:127-164](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/landlock.ts#L127-L164)）
+- `LANDLOCK_EXECUTABLE.prepare` 对 probe 直接返回 `landlock: fully enforced` 与 0，否则返回带受限文件系统的 delegate 与缺失可执行文件时的 125 退出（[packages/experimental/webworker-runtime/src/shell/process/landlock.ts:168-183](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/landlock.ts#L168-L183)）
+- `runSync` 只让 probe 同步完成，其余返回 `asynchronous` 标记（[packages/experimental/webworker-runtime/src/shell/process/landlock.ts:184-193](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/landlock.ts#L184-L193)）
+
+### packages/experimental/webworker-runtime/src/shell/process/protocol.ts
+
+shell 进程与其宿主之间交换的帧类型定义，以及宿主 worker 入口用来判定自身角色的守卫函数。
+
+- `isShellStartFrame` 检查消息的 `t` 字段是否为 `shell-start`，宿主 worker 入口据此决定自己是宿主还是 shell 进程（[packages/experimental/webworker-runtime/src/shell/process/protocol.ts:80-82](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/protocol.ts#L80-L82)）
+
+### packages/experimental/webworker-runtime/src/shell/process/virtual-executables.ts
+
+worker 进程启动器使用的虚拟可执行文件注册表，把若干平台可执行名映射到 worker 内实现。
+
+- `EXECUTABLES` 映射表当前登记 `landlock-run` 一项（[packages/experimental/webworker-runtime/src/shell/process/virtual-executables.ts:50-52](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/virtual-executables.ts#L50-L52)）
+- `virtualExecutable` 取路径的 basename 查表，未命中返回 undefined 以便回落到普通命令表（[packages/experimental/webworker-runtime/src/shell/process/virtual-executables.ts:59-61](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/process/virtual-executables.ts#L59-L61)）
+
+### packages/experimental/webworker-runtime/src/shell/programs/builtins.ts
+
+命令表中读写 shell 自身状态（目录、环境、退出状态）的内建程序集合。
+
+- `cd` 取 argv 或 `$HOME` 或 `/`，`-` 回到 `OLDPWD`，路径不存在或非目录分别报错返回 1，成功后更新 `OLDPWD`、`cwd` 与已存在的 `PWD`（[packages/experimental/webworker-runtime/src/shell/programs/builtins.ts:15-32](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/builtins.ts#L15-L32)）
+- `pwd` 输出当前工作目录（[packages/experimental/webworker-runtime/src/shell/programs/builtins.ts:34-37](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/builtins.ts#L34-L37)）
+- `export` 无操作数时按名排序打印 `declare -x`，不含 `=` 的名字把已有 shell 变量提升进环境，含 `=` 的直接写环境（[packages/experimental/webworker-runtime/src/shell/programs/builtins.ts:39-55](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/builtins.ts#L39-L55)）
+- `unset` 同时从环境与 shell 变量中剔除给定名字（[packages/experimental/webworker-runtime/src/shell/programs/builtins.ts:57-64](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/builtins.ts#L57-L64)）
+- `env` 按名排序打印整个环境（[packages/experimental/webworker-runtime/src/shell/programs/builtins.ts:66-69](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/builtins.ts#L66-L69)）
+- `exit` 把状态写入 `exitRequested`，使解释器结束整行（[packages/experimental/webworker-runtime/src/shell/programs/builtins.ts:71-75](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/builtins.ts#L71-L75)）
+- `test`/`[` 先剥掉方括号形式的首尾记号，再按一元/二元谓词求值，不支持的运算符写诊断并返回 2（[packages/experimental/webworker-runtime/src/shell/programs/builtins.ts:78-118](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/builtins.ts#L78-L118)）
+- `sleep` 校验时间间隔后让定时器与 abort 信号竞争，被中止时清掉定时器并返回 130（[packages/experimental/webworker-runtime/src/shell/programs/builtins.ts:120-141](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/builtins.ts#L120-L141)）
+- `date` 输出当前时刻的 ISO 字符串（[packages/experimental/webworker-runtime/src/shell/programs/builtins.ts:143-146](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/builtins.ts#L143-L146)）
+- `seq` 按参数个数推出起点、步长、终点，边界不可解析或步长为 0 时返回 2（[packages/experimental/webworker-runtime/src/shell/programs/builtins.ts:148-160](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/builtins.ts#L148-L160)）
+- `printenv` 无参时打印排序后的环境，有参时经 `readVariable` 取值，未设返回 1（[packages/experimental/webworker-runtime/src/shell/programs/builtins.ts:163-173](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/builtins.ts#L163-L173)）
+- `BUILTIN_PROGRAMS` 决定哪些名字属于内建，并把 `true`/`false`/`:` 直接实现为固定状态（[packages/experimental/webworker-runtime/src/shell/programs/builtins.ts:176-192](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/builtins.ts#L176-L192)）
+
+### packages/experimental/webworker-runtime/src/shell/programs/files.ts
+
+命令表中作用于文件与目录的工具集合，全部通过 `ShellFileSystem` 访问。
+
+- `longEntry` 用 VFS 实际持有的字段拼出 `ls -l` 形式的一行（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:16-20](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L16-L20)）
+- `ls` 无操作数时默认 `.`，缺失路径写诊断并把状态置为 2，多操作数时输出分节标题，`-a` 控制隐藏项、`-l` 控制长格式，目录逐条打印一行（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:22-48](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L22-L48)）
+- `find` 自行扫描 `-name`/`-type`/`-maxdepth`，其余以 `-` 开头的谓词写诊断并返回 2（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:50-68](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L50-L68)）
+- `find` 的递归遍历按名字模式与类型筛选输出，缺失根写诊断并把状态置 1，深度到达 `-maxdepth` 即停止下探（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:71-87](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L71-L87)）
+- `mkdir` 按 `-p` 决定是否递归创建，失败逐个报错并把状态置 1（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:90-102](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L90-L102)）
+- `rmdir` 先列目录，非空则拒绝删除（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:104-122](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L104-L122)）
+- `rm` 由 `-r`/`-R` 决定是否递归、`-f` 决定是否容忍缺失，对未加递归标志的目录拒绝删除（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:124-151](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L124-L151)）
+- `copyTree` 对文件读写复制、对目录先建目录再逐子项递归（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:154-162](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L154-L162)）
+- `destinationFor` 在目标是目录时把源的 basename 拼进去，否则直接用目标路径（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:165-167](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L165-L167)）
+- `cp` 把最后一个操作数当目标，缺少源或目标返回 2，源缺失或未加递归标志的目录逐个报错置状态 1（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:169-200](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L169-L200)）
+- `mv` 同样切分源与目标，逐个调用 `rename` 并把失败改写成诊断（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:202-221](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L202-L221)）
+- `touch` 通过把原有内容重新写回来推进 VFS 时间戳，缺失时写入空文件（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:223-237](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L223-L237)）
+- `stat` 打印绝对路径、类型、字节数与 ISO 修改时间（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:239-253](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L239-L253)）
+- `dirname` 与 `basename` 只做路径串处理，缺参分别返回 2（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:255-268](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L255-L268)）
+- `unavailable` 生成一个只写诊断并返回 127 的程序（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:271-274](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L271-L274)）
+- `FILE_PROGRAMS` 登记这些名字，并把 `ln` 与 `readlink` 登记为拒绝执行（[packages/experimental/webworker-runtime/src/shell/programs/files.ts:277-293](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/files.ts#L277-L293)）
+
+### packages/experimental/webworker-runtime/src/shell/programs/index.ts
+
+worker shell 的命令表装配点：把三组程序合成一张表，解释器按它判断一个名字是否可执行。
+
+- `standardPrograms` 惰性构建并缓存合并后的命令表，表外的名字即报 `command not found`（[packages/experimental/webworker-runtime/src/shell/programs/index.ts:14-28](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/index.ts#L14-L28)）
+- `which` 对表内名字打印 `shell built-in command`，表外名字写诊断并把状态置 1（[packages/experimental/webworker-runtime/src/shell/programs/index.ts:31-45](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/index.ts#L31-L45)）
+
+### packages/experimental/webworker-runtime/src/shell/programs/options.ts
+
+命令表共用的参数切分与行切分辅助，被 builtins、files、text 三组程序调用。
+
+- `parseOptions` 处理 `--` 之后一律作操作数、单独的 `-` 作操作数、长旗标按 `=` 取值、短旗标逐字母展开，且 `valued` 中的字母吞掉同 token 余下部分或下一个参数（[packages/experimental/webworker-runtime/src/shell/programs/options.ts:27-64](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/options.ts#L27-L64)）
+- `splitLong` 按第一个 `=` 切分长旗标名与值（[packages/experimental/webworker-runtime/src/shell/programs/options.ts:67-70](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/options.ts#L67-L70)）
+- `numberOption` 在旗标缺失或不可解析时回落到调用者给的默认值（[packages/experimental/webworker-runtime/src/shell/programs/options.ts:79-84](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/options.ts#L79-L84)）
+- `toLines` 切行并丢掉末尾换行造成的空行，空文本返回空数组（[packages/experimental/webworker-runtime/src/shell/programs/options.ts:91-96](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/options.ts#L91-L96)）
+
+### packages/experimental/webworker-runtime/src/shell/programs/text.ts
+
+命令表中的文本工具集合，每个都把操作数当文件读、无操作数时回落到标准输入。
+
+- `readInputs` 无操作数时以 stdin 为唯一来源，`-` 也读 stdin，读取失败写诊断并把状态置 1（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:20-44](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L20-L44)）
+- `terminated` 在文本非空且无尾换行时补一个换行（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:47-49](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L47-L49)）
+- `echo` 用空格连接参数，`-n` 抑制尾随换行（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:51-56](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L51-L56)）
+- `printf` 只识别 `%s`/`%d`/`%i`/`%%` 四种转换并按序消费操作数，随后把 `\n`、`\t` 展开为真实字符（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:58-74](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L58-L74)）
+- `cat` 默认原样转发内容，`-n` 时跨来源连续编号输出（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:76-91](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L76-L91)）
+- `head` 取前 `-n`（默认 10）行，多来源时打印 `==> name <==` 分节（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:93-102](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L93-L102)）
+- `tail` 取末 `-n`（默认 10）行，同样带多来源分节（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:104-113](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L104-L113)）
+- `wc` 按 `-l`/`-w`/`-c` 选列（未选则三列全出）并对齐输出，来源为 stdin 时不带名字（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:115-130](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L115-L130)）
+- `walkFiles` 递归收集一个目录下的全部文件及其展示路径（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:133-145](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L133-L145)）
+- `grep` 由 `-e` 或首个操作数取模式，`-F` 把模式整体转义、`-i` 加忽略大小写，模式非法写诊断并返回 2（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:147-163](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L147-L163)）
+- `grep` 对目标为目录且无 `-r`/`-R` 时报错并把状态抬到 2，有递归标志时把整棵子树的文件收进来源集（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:165-191](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L165-L191)）
+- `grep` 用 `-v` 反选、`-l` 只出文件名、`-c` 只出计数、`-n` 加行号、`-H` 或多来源时加文件名前缀，并在无错且无匹配时返回 1（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:193-214](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L193-L214)）
+- `sort` 按 `-n` 选数值序否则字典序，`-r` 反转，`-u` 去重（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:217-228](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L217-L228)）
+- `uniq` 折叠相邻相同行，`-d` 只留重复组、`-u` 只留唯一组、`-c` 前缀计数（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:230-247](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L230-L247)）
+- `cut` 支持 `-c` 字符区间与 `-d`/`-f` 字段选择，两者都缺时返回 2（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:249-273](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L249-L273)）
+- `characterSet` 把 `a-z` 之类的区间按码点展开成逐字符集合（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:276-293](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L276-L293)）
+- `tr` 缺源集返回 2，`-d` 删除源集中的字符，否则缺替换集返回 2、有则逐字符映射（超出的下标钳到替换集末位）（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:295-319](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L295-L319)）
+- `sed` 只接受 `s/pattern/replacement/` 形式的脚本，形式不符或模式非法写诊断并返回 2，`g`/`i` 修饰进入正则标志，替换串里的 `\1` 被改写成 `$1`（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:322-344](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L322-L344)）
+- `tee` 先把 stdin 原样输出，再按 `-a` 决定追加或覆盖写入每个目标文件，写失败返回 1（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:346-358](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L346-L358)）
+- `TEXT_PROGRAMS` 决定这一组名字进入命令表（[packages/experimental/webworker-runtime/src/shell/programs/text.ts:361-363](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/shell/programs/text.ts#L361-L363)）
+
+### packages/experimental/webworker-runtime/src/shell/types.ts
+
+worker 内 shell 的类型定义：命令行状态、程序的字节面、文件系统接口与程序签名。
+
+- 无运行期机制
+
+### packages/experimental/webworker-runtime/src/storage/active.ts
+
+进程内保存"当前已挂载文件系统"的槽位，`node:fs` 代理与 shell 的宿主文件系统都从这里取。
+
+- `setActiveVfs` 发布 worker 入口挂载的文件系统，供后续所有 `node:fs` 访问读取（[packages/experimental/webworker-runtime/src/storage/active.ts:15-17](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/active.ts#L15-L17)）
+- `requireActiveVfs` 在尚未挂载时抛出指名原因的错误，而不是返回空值（[packages/experimental/webworker-runtime/src/storage/active.ts:23-28](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/active.ts#L23-L28)）
+
+### packages/experimental/webworker-runtime/src/storage/image-gzip.ts
+
+VFS 镜像的字节外壳：在 tar 读取器之前把 gzip 成员解压，并在流中拒绝非 gzip 的响应体。
+
+- `GZIP_MAGIC` 与 `QUOTED_BYTES` 定义识别字节与被拒绝时引用的字节数，`hex` 把它们格式化进错误消息（[packages/experimental/webworker-runtime/src/storage/image-gzip.ts:21-27](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/image-gzip.ts#L21-L27)）
+- `requireGzipMember` 跨 chunk 缓存前导字节，判定后原样放行，魔数不符即抛拒绝错误（[packages/experimental/webworker-runtime/src/storage/image-gzip.ts:39-62](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/image-gzip.ts#L39-L62)）
+- 流在凑够两字节前就结束时在 `flush` 里抛同一条拒绝错误（[packages/experimental/webworker-runtime/src/storage/image-gzip.ts:63-66](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/image-gzip.ts#L63-L66)）
+- `inflateImageStream` 把响应体先过魔数检查再过 `DecompressionStream('gzip')`，边下载边解压并收成一个字节数组（[packages/experimental/webworker-runtime/src/storage/image-gzip.ts:76-83](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/image-gzip.ts#L76-L83)）
+- `inflateImage` 把内存字节包成 `Response` 的可读流走同一条解压路径，取不到 body 时抛错（[packages/experimental/webworker-runtime/src/storage/image-gzip.ts:96-100](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/image-gzip.ts#L96-L100)）
+
+### packages/experimental/webworker-runtime/src/storage/memory.ts
+
+worker 的 `node:fs` 代理背后的内存文件系统实现，以及把构建期 tar 镜像与叠加层挂载进来的两个入口。
+
+- `fail` 抛出带 `code`/`path`/`syscall` 的 Node 形状错误（[packages/experimental/webworker-runtime/src/storage/memory.ts:35-41](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L35-L41)）
+- `encodingOf` 从字符串或对象选项中取出编码，决定读操作返回文本还是字节（[packages/experimental/webworker-runtime/src/storage/memory.ts:43-47](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L43-L47)）
+- `statsOf` 把目录/文件位与存储的权限位合成 `mode`，并把四个时间戳统一取自 `mtimeMs`（[packages/experimental/webworker-runtime/src/storage/memory.ts:54-72](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L54-L72)）
+- `bigIntStatsOf` 产出 BigInt 形状的 stats，毫秒按 1e6 放大成纳秒，`dev` 固定为 1，`nlink` 由调用者传入（[packages/experimental/webworker-runtime/src/storage/memory.ts:87-124](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L87-L124)）
+- `openMode` 解析 Node 的字符串 flags，非法组合抛带 `ERR_INVALID_ARG_VALUE` 的 TypeError（[packages/experimental/webworker-runtime/src/storage/memory.ts:136-155](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L136-L155)）
+- `resize` 保留前缀并零填充扩展部分，长度非法时抛带 `ERR_OUT_OF_RANGE` 的 RangeError（[packages/experimental/webworker-runtime/src/storage/memory.ts:158-167](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L158-L167)）
+- 文件系统状态分置于文件表、目录集合、目录权限位、目录 mtime、监听者集合与身份表六处（[packages/experimental/webworker-runtime/src/storage/memory.ts:181-193](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L181-L193)）
+- `flush` 把结算委派给可选的持久化 sink（[packages/experimental/webworker-runtime/src/storage/memory.ts:207-209](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L207-L209)）
+- `subscribe` 登记变更监听者并返回移除它的 disposer（[packages/experimental/webworker-runtime/src/storage/memory.ts:216-219](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L216-L219)）
+- `publish` 在状态改完之后先通知 sink 再通知监听者，单个监听者抛出只被 `console.error` 记录而不回滚写入（[packages/experimental/webworker-runtime/src/storage/memory.ts:222-234](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L222-L234)）
+- `promises` 面把 `node:fs/promises` 的方法逐一转发到同步实现，`access` 对不存在的路径抛 ENOENT 而对任何已存在路径放行（[packages/experimental/webworker-runtime/src/storage/memory.ts:237-264](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L237-L264)）
+- `key` 把任意写法的路径规范成无尾分隔符的绝对 POSIX 路径（[packages/experimental/webworker-runtime/src/storage/memory.ts:267-270](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L267-L270)）
+- `readFileSync` 对目录抛 EISDIR、对缺失抛 ENOENT，无编码时返回底层字节视图而非拷贝（[packages/experimental/webworker-runtime/src/storage/memory.ts:278-286](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L278-L286)）
+- `existsSync` 同时查文件表与目录集合（[packages/experimental/webworker-runtime/src/storage/memory.ts:293-296](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L293-L296)）
+- `statSync` 在文件与目录之间取尺寸、时间、权限位，缺失抛 ENOENT，并按 `bigint` 选项选择两种 stats 形状（[packages/experimental/webworker-runtime/src/storage/memory.ts:304-316](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L304-L316)）
+- `identityOf` 为路径首次被观察时分配自增身份号（[packages/experimental/webworker-runtime/src/storage/memory.ts:324-330](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L324-L330)）
+- `identityOfFile` 把身份挂在文件节点上，使其跨改名与硬链接保持不变（[packages/experimental/webworker-runtime/src/storage/memory.ts:333-338](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L333-L338)）
+- `fileLinkCount` 由节点的反向路径索引算出 `nlink`（[packages/experimental/webworker-runtime/src/storage/memory.ts:341-343](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L341-L343)）
+- `addFilePath`/`removeFilePath` 维护节点的反向路径索引，硬链接时升级为 Set、退回单条时收回成字符串（[packages/experimental/webworker-runtime/src/storage/memory.ts:346-368](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L346-L368)）
+- `setFile`/`deleteFile` 在改动文件表的同时同步反向索引，被删除但仍被描述符持有的节点得以保留（[packages/experimental/webworker-runtime/src/storage/memory.ts:371-386](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L371-L386)）
+- `publishFile` 为一个节点的每个硬链接名各发一条 write 变更，`appendedFrom` 只在追加时携带（[packages/experimental/webworker-runtime/src/storage/memory.ts:389-404](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L389-L404)）
+- `replaceFile` 换掉字节、推进 mtime 并通知所有链接名（[packages/experimental/webworker-runtime/src/storage/memory.ts:407-411](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L407-L411)）
+- `writeFileNode` 按偏移写入并对空洞零填充，恰好写在原末尾时把原长度作为 `appendedFrom` 上报（[packages/experimental/webworker-runtime/src/storage/memory.ts:414-422](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L414-L422)）
+- `fileStats` 让已被摘除路径的打开节点仍能读到自己的元数据（[packages/experimental/webworker-runtime/src/storage/memory.ts:430-432](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L430-L432)）
+- `forgetIdentity` 连同整棵子树一起丢弃身份号，使重建的路径拿到新号（[packages/experimental/webworker-runtime/src/storage/memory.ts:435-441](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L435-L441)）
+- `touchNode` 保证新的 mtime 严格大于该条目上一次的值，`touchDirectory` 对目录做同样处理（[packages/experimental/webworker-runtime/src/storage/memory.ts:453-469](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L453-L469)）
+- `readdirSync` 对文件抛 ENOTDIR、对缺失抛 ENOENT，用前缀扫描两张表推出直属子项名并排序，`withFileTypes` 时返回 dirent（[packages/experimental/webworker-runtime/src/storage/memory.ts:477-495](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L477-L495)）
+- `direntOf` 用子项的 stats 构造 `isFile`/`isDirectory`，符号链接一律为假（[packages/experimental/webworker-runtime/src/storage/memory.ts:498-507](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L498-L507)）
+- `realpathSync` 只做规范化并要求路径存在（[packages/experimental/webworker-runtime/src/storage/memory.ts:514-518](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L514-L518)）
+- `mkdirSync` 对已有文件抛 EEXIST，对已有目录在非递归时抛 EEXIST、递归时静默返回，缺父目录时按 `recursive` 决定递归创建或抛 ENOENT，最后记权限位并发布 mkdir 变更（[packages/experimental/webworker-runtime/src/storage/memory.ts:526-545](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L526-L545)）
+- `writeFileSync` 对目录抛 EISDIR、父目录缺失抛 ENOENT，`wx` 遇已有文件抛 EEXIST，`a` 转交追加；重写保留原权限位、新建才应用 mode，并只在新建时发布 `entryChanged` 为真的写变更（[packages/experimental/webworker-runtime/src/storage/memory.ts:553-573](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L553-L573)）
+- `opendir` 在打开时固定一份条目名快照，之后按游标逐条读出（[packages/experimental/webworker-runtime/src/storage/memory.ts:580-597](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L580-L597)）
+- `open` 对目录只允许只读打开并把读写方法一律做成 EISDIR 失败（[packages/experimental/webworker-runtime/src/storage/memory.ts:606-618](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L606-L618)）
+- 文件句柄维护自己的读写位置，追加模式每次写到当前末尾，`close` 之后任何操作抛 EBADF，`sync`/`datasync` 触发持久化结算（[packages/experimental/webworker-runtime/src/storage/memory.ts:619-655](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L619-L655)）
+- `openFileSync` 按 flags 处理独占、缺失、创建与截断，并返回一个绑定在文件节点上的描述符：不可读读抛 EBADF、不可写写抛 EBADF、不可写截断抛 EINVAL（[packages/experimental/webworker-runtime/src/storage/memory.ts:664-696](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L664-L696)）
+- `handleTail` 给目录句柄提供 stat 与把 `sync`/`datasync` 落到 `flush` 的实现（[packages/experimental/webworker-runtime/src/storage/memory.ts:705-712](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L705-L712)）
+- `appendFileSync` 在文件不存在时转成一次普通写入，否则从当前末尾偏移写（[packages/experimental/webworker-runtime/src/storage/memory.ts:719-725](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L719-L725)）
+- `renameSync` 的文件分支检查目标为目录（EISDIR）与目标父目录缺失（ENOENT），迁移映射后丢弃两端身份、推进两侧目录 mtime，并发布 remove 加一条 `entryChanged` 写变更（[packages/experimental/webworker-runtime/src/storage/memory.ts:732-749](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L732-L749)）
+- `renameSync` 的目录分支拒绝改名到文件（ENOTDIR）与非空目录（ENOTEMPTY），逐条迁移子文件与子目录连同权限位和 mtime，并按 remove、各级 mkdir、各文件 write 的顺序发布变更（[packages/experimental/webworker-runtime/src/storage/memory.ts:751-796](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L751-L796)）
+- `linkSync` 让第二个名字指向同一文件节点，目标已存在抛 EEXIST、父目录缺失抛 ENOENT，并发布一条建条目的写变更（[packages/experimental/webworker-runtime/src/storage/memory.ts:806-816](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L806-L816)）
+- `truncateSync` 对缺失文件抛 ENOENT，否则在节点上做尺寸调整（[packages/experimental/webworker-runtime/src/storage/memory.ts:823-828](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L823-L828)）
+- `chmodSync` 改写文件节点或目录的权限位并为每个受影响的名字发布 chmod 变更，路径不存在抛 ENOENT（[packages/experimental/webworker-runtime/src/storage/memory.ts:835-854](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L835-L854)）
+- `unlinkSync` 摘除条目、丢弃身份、推进父目录 mtime 并发布 remove，缺失时抛 ENOENT（[packages/experimental/webworker-runtime/src/storage/memory.ts:860-866](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L860-L866)）
+- `rmSync` 先按文件删除，目录必须带 `recursive` 否则抛 `ERR_FS_EISDIR`，递归时清掉整棵子树的文件、目录、权限位与 mtime 并只发布一条针对根的 remove；两者都不匹配时按 `force` 决定静默或抛 ENOENT（[packages/experimental/webworker-runtime/src/storage/memory.ts:873-900](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L873-L900)）
+- `mkdtempSync` 用时间戳与自增计数拼出唯一后缀并递归建目录（[packages/experimental/webworker-runtime/src/storage/memory.ts:907-912](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L907-L912)）
+- `seed`/`seedDirectory` 按镜像给的 mode 与 mtime 填入条目并补建父目录，且全程不发布任何变更（[packages/experimental/webworker-runtime/src/storage/memory.ts:920-949](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L920-L949)）
+- `usage` 汇总文件数、目录数与总字节数，供宿主启动诊断读取（[packages/experimental/webworker-runtime/src/storage/memory.ts:955-959](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L955-L959)）
+- `loadVfsImage` 先建虚拟根，剥掉条目名的 `./` 前缀，遇绝对条目名抛错，其余按目录或文件带 mode 填入（[packages/experimental/webworker-runtime/src/storage/memory.ts:973-988](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L973-L988)）
+- `loadVfsOverlay` 拒绝空路径、绝对路径、含 `.`/`..`/空段的路径以及首段不在 `IMAGE_OVERLAY_DIRECTORIES` 内的条目，并拒绝用文件覆盖已有目录，其余按后到者覆盖填入（[packages/experimental/webworker-runtime/src/storage/memory.ts:1002-1023](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/memory.ts#L1002-L1023)）
+
+### packages/experimental/webworker-runtime/src/storage/paths.ts
+
+worker 宿主内存文件系统的虚拟根与各固定目录常量，被进程 shim、path/os shim 与镜像收集器共用。
+
+- `DSH_ROOT` 定义虚拟根，`process.cwd()` 与所有绝对路径由它起算（[packages/experimental/webworker-runtime/src/storage/paths.ts:8](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/paths.ts#L8)）
+- `DSH_HOME`、`DSH_NODE_MODULES`、`DSH_CONFIG`、`DSH_WORKSPACE` 分别固定持久状态目录、模块加载器解析的扁平包树、装配后的配置树与默认工作目录（[packages/experimental/webworker-runtime/src/storage/paths.ts:11-20](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/paths.ts#L11-L20)）
+- `DSH_TMP` 固定 `os.tmpdir()` 报告的临时目录，也是 landlock 层把 `/tmp` 重写过去的目标（[packages/experimental/webworker-runtime/src/storage/paths.ts:23](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/paths.ts#L23)）
+
+### packages/experimental/webworker-runtime/src/storage/tar.ts
+
+VFS 镜像格式的 ustar 打包与解包实现，构建期收集器写、worker 挂载时读。
+
+- `writeOctal` 按 ustar 约定写零填充八进制字段（[packages/experimental/webworker-runtime/src/storage/tar.ts:28-30](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/tar.ts#L28-L30)）
+- `splitName` 把长名字切成 name+prefix 两段，切不出合法组合时抛错而不是静默截断（[packages/experimental/webworker-runtime/src/storage/tar.ts:39-50](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/tar.ts#L39-L50)）
+- `packTar` 按名字是否以斜杠结尾判定目录、写入 0o755/0o644 的 mode 与 typeflag、算校验和、按 512 字节补齐并以两个全零块收尾（[packages/experimental/webworker-runtime/src/storage/tar.ts:61-100](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/tar.ts#L61-L100)）
+- `readField` 读取头部中以 NUL 结尾的字符串字段（[packages/experimental/webworker-runtime/src/storage/tar.ts:103-107](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/tar.ts#L103-L107)）
+- `parseTar` 遇全零块即终止、按 prefix 拼回全名、解析 size 与权限位、对写入子集之外的 typeflag 抛错，并让文件字节以 subarray 视图直接指向原缓冲区（[packages/experimental/webworker-runtime/src/storage/tar.ts:118-139](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/webworker-runtime/src/storage/tar.ts#L118-L139)）
+
+### packages/experimental/webworker-runtime/src/storage/types.ts
+
+各 VFS 后端共享的文件系统接口、stats 形状、变更记录与观察者类型定义。
+
+- 无运行期机制
 
 ### packages/experimental/webworker-runtime/src/transport/frames.ts
 

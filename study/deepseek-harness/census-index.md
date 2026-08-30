@@ -14,7 +14,7 @@ title: deepseek-harness 普查索引
 
 **证据行数**的口径是该文件中以 `- ` 开头的行数（含写「无运行期机制」的那一行）。
 
-共 268 个普查文件、3812 个文件、**27434 条证据行**。
+共 268 个普查文件、3812 个文件、**28241 条证据行**。
 
 ## 一、工作区包
 
@@ -22,8 +22,8 @@ title: deepseek-harness 普查索引
 
 | 包 | 目录 | 文件数 | 证据行数 | 普查 |
 | --- | --- | ---: | ---: | --- |
-| acp-acp | `packages/acp/acp` | 11 | 0 | [`census/acp-acp.md`](acp-acp.md) |
-| api-gateway | `packages/api/gateway` | 15 | 20 | [`census/api-gateway.md`](api-gateway.md) |
+| acp-acp | `packages/acp/acp` | 11 | 175 | [`census/acp-acp.md`](acp-acp.md) |
+| api-gateway | `packages/api/gateway` | 15 | 187 | [`census/api-gateway.md`](api-gateway.md) |
 | api-remotes | `packages/api/remotes` | 9 | 34 | [`census/api-remotes.md`](api-remotes.md) |
 | api-session-controller | `packages/api/session-controller` | 36 | 409 | [`census/api-session-controller.md`](api-session-controller.md) |
 | api-settings-controller | `packages/api/settings-controller` | 7 | 52 | [`census/api-settings-controller.md`](api-settings-controller.md) |
@@ -118,7 +118,7 @@ title: deepseek-harness 普查索引
 | experimental-inspector | `packages/experimental/inspector` | 155 | 1069 | [`census/experimental-inspector.md`](experimental-inspector.md) |
 | experimental-tool-agent-team | `packages/experimental/tool-agent-team` | 5 | 45 | [`census/experimental-tool-agent-team.md`](experimental-tool-agent-team.md) |
 | experimental-webworker-packer | `packages/experimental/webworker-packer` | 12 | 81 | [`census/experimental-webworker-packer.md`](experimental-webworker-packer.md) |
-| experimental-webworker-runtime | `packages/experimental/webworker-runtime` | 83 | 570 | [`census/experimental-webworker-runtime.md`](experimental-webworker-runtime.md) |
+| experimental-webworker-runtime | `packages/experimental/webworker-runtime` | 83 | 774 | [`census/experimental-webworker-runtime.md`](experimental-webworker-runtime.md) |
 | extensions-cordis-client-runner | `packages/extensions/cordis-client-runner` | 16 | 194 | [`census/extensions-cordis-client-runner.md`](extensions-cordis-client-runner.md) |
 | extensions-cordis-host-runner | `packages/extensions/cordis-host-runner` | 11 | 191 | [`census/extensions-cordis-host-runner.md`](extensions-cordis-host-runner.md) |
 | extensions-tool-cordis | `packages/extensions/tool-cordis` | 11 | 137 | [`census/extensions-tool-cordis.md`](extensions-tool-cordis.md) |
@@ -284,7 +284,7 @@ title: deepseek-harness 普查索引
 | workflow-tool-workflow | `packages/workflow/tool-workflow` | 6 | 39 | [`census/workflow-tool-workflow.md`](workflow-tool-workflow.md) |
 | workflow-workflow | `packages/workflow/workflow` | 7 | 31 | [`census/workflow-workflow.md`](workflow-workflow.md) |
 | workflow-workflow-worker-thread | `packages/workflow/workflow-worker-thread` | 14 | 152 | [`census/workflow-workflow-worker-thread.md`](workflow-workflow-worker-thread.md) |
-| workspace-workspace | `packages/workspace/workspace` | 9 | 0 | [`census/workspace-workspace.md`](workspace-workspace.md) |
+| workspace-workspace | `packages/workspace/workspace` | 9 | 84 | [`census/workspace-workspace.md`](workspace-workspace.md) |
 
 ## 二、不属于任何工作区包的文件
 
@@ -295,8 +295,8 @@ title: deepseek-harness 普查索引
 | _docs | docs/（随包文档） | 121 | 1935 | [`census/_docs.md`](_docs.md) |
 | _root | 仓库根目录与未归入工作区包的文件 | 88 | 325 | [`census/_root.md`](_root.md) |
 | _scripts | scripts/（仓库脚本） | 117 | 1754 | [`census/_scripts.md`](_scripts.md) |
-| _snapshots | snapshots/（快照夹具） | 615 | 3528 | [`census/_snapshots.md`](_snapshots.md) |
+| _snapshots | snapshots/（快照夹具） | 615 | 3705 | [`census/_snapshots.md`](_snapshots.md) |
 | _website | website（文档站） | 5 | 58 | [`census/_website.md`](_website.md) |
 
-两节合计 **3812** 个文件、**27434** 条证据行。
+两节合计 **3812** 个文件、**28241** 条证据行。
 
