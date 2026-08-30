@@ -103,6 +103,24 @@ echo "== the real default run =="
 run_case "default targets are scanned"   0 "-" "files>=5 anchors>=20"
 run_raw  "make check path exits 0"       0
 
+# A default target that does not exist yet is deliberately not an error -- study/
+# and points/ may not exist on a fresh checkout. That tolerance also means a
+# *dead* entry (a file that was renamed or deleted) sits in the list forever,
+# scanning nothing and reporting nothing. So lint the list itself: every
+# root-level file named in DEFAULT_TARGETS has to be a file that exists.
+# Directories stay exempt, since those are the ones allowed to appear later.
+dead="$(python3 -c '
+import sys
+from pathlib import Path
+sys.path.insert(0, "'"$ROOT"'/scripts")
+import check_anchors
+root = Path("'"$ROOT"'")
+print(" ".join(t for t in check_anchors.DEFAULT_TARGETS
+                if not (root / t).is_dir() and not (root / t).is_file()))
+' 2>/dev/null)"
+if [ -z "$dead" ]; then ok "DEFAULT_TARGETS has no dead entries"
+else bad "DEFAULT_TARGETS has no dead entries" "these are named but do not exist: $dead"; fi
+
 echo "== recursion and aggregation =="
 run_case "nested dirs, counts aggregate" 0 "-" "files=2 anchors=2" "$ROOT/tests/fixtures/tree"
 
@@ -152,9 +170,46 @@ if git clone -q --shared --no-checkout "$ROOT/repos/mini-swe-agent" \
     'import json,sys; print(" ".join(p["code"] for p in json.load(sys.stdin)["problems"]) or "-")' 2>/dev/null)"
   if [ "$rc" = 1 ] && [ "$codes" = "not-ancestor" ]; then ok "not-ancestor"
   else bad "not-ancestor" "exit $rc codes [$codes], wanted exit 1 codes [not-ancestor]"; fi
+
+  # The same commit, written as a clickable link. The ancestry rule has to hold
+  # whichever form the anchor is in; if only the `repo@sha:` form were checked,
+  # a link could quietly point outside the pinned history.
+  printf '# outside the pinned history, as a link\n\n[README.md:1](https://github.com/SWE-agent/mini-swe-agent/blob/%s/README.md#L1)\n' \
+    "$OUTSIDE" > "$TMP/na/link.md"
+  out="$(python3 "$CHECK" --root "$TMP/na" --json "$TMP/na/link.md" 2>/dev/null)"; rc=$?
+  codes="$(printf '%s' "$out" | python3 -c \
+    'import json,sys; print(" ".join(p["code"] for p in json.load(sys.stdin)["problems"]) or "-")' 2>/dev/null)"
+  if [ "$rc" = 1 ] && [ "$codes" = "not-ancestor" ]; then ok "link form: not-ancestor"
+  else bad "link form: not-ancestor" "exit $rc codes [$codes], wanted exit 1 codes [not-ancestor]"; fi
 else
   bad "not-ancestor" "could not create the throwaway clone"
+  bad "link form: not-ancestor" "could not create the throwaway clone"
 fi
+
+# ambiguous-repo: a link names `owner/repo`, not a pin, so two pins tracking the
+# same upstream leave it undecidable. Needs a second pin, hence a generated case.
+printf 'a\thttps://github.com/SWE-agent/mini-swe-agent\t%s\tfirst\nb\thttps://github.com/SWE-agent/mini-swe-agent.git\t%s\tsecond\n' \
+  "$PIN" "$PIN" > "$TMP/ambig-pins.tsv"
+printf '# two pins, one upstream\n\n[README.md:1](https://github.com/SWE-agent/mini-swe-agent/blob/%s/README.md#L1)\n' \
+  "$PIN" > "$TMP/ambiguous.md"
+out="$(python3 "$CHECK" --root "$ROOT" --pins "$TMP/ambig-pins.tsv" --json "$TMP/ambiguous.md" 2>/dev/null)"; rc=$?
+codes="$(printf '%s' "$out" | python3 -c \
+  'import json,sys; print(" ".join(p["code"] for p in json.load(sys.stdin)["problems"]) or "-")' 2>/dev/null)"
+if [ "$rc" = 1 ] && [ "$codes" = "ambiguous-repo" ]; then ok "link form: ambiguous-repo"
+else bad "link form: ambiguous-repo" "exit $rc codes [$codes], wanted exit 1 codes [ambiguous-repo]"; fi
+
+# The upstream url is matched by which repository it names, not by how it is
+# spelled: ssh, git+https and a trailing .git all have to reach the same pin, or
+# a link would fail for a reason that has nothing to do with the code it cites.
+for spelling in 'git@github.com:SWE-agent/mini-swe-agent.git' \
+                'ssh://git@github.com/SWE-agent/mini-swe-agent' \
+                'https://github.com/swe-agent/MINI-SWE-AGENT/'; do
+  printf 'mini-swe-agent\t%s\t%s\tspelling fixture\n' "$spelling" "$PIN" > "$TMP/spell-pins.tsv"
+  out="$(python3 "$CHECK" --root "$ROOT" --pins "$TMP/spell-pins.tsv" --json \
+         "$ROOT/tests/cases/link-ok.md" 2>/dev/null)"; rc=$?
+  if [ "$rc" = 0 ]; then ok "link form: upstream url spelled as $spelling"
+  else bad "link form: upstream url spelled as $spelling" "exit $rc, wanted 0"; fi
+done
 
 # repo-absent: a pin that has never been synced.
 printf 'zz-absent\thttps://example.invalid/zz\t%040d\tnot materialised\n' 0 > "$TMP/pins.tsv"

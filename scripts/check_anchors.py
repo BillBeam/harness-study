@@ -10,13 +10,21 @@ Three things are checked:
   1. front matter          `repo:` names a pin, `commit:` equals that pin's commit
   2. code anchors          `path:line` / `path:line-line` / `repo@commit:path:line`
                            -> the blob exists at that commit and the line is in range
-  3. commit references     `abcdef12` / `repo@abcdef12`
+  3. link anchors          https://github.com/<owner>/<repo>/blob/<sha>/<path>#L12
+                           https://github.com/<owner>/<repo>/blob/<sha>/<path>#L12-L20
+                           -> <owner>/<repo> is matched to a pin through that pin's
+                              upstream url in repos/pins.tsv, <sha> must be the pin
+                              or an ancestor of it, and path and lines are checked
+                              exactly as in form 2
+  4. commit references     `abcdef12` / `repo@abcdef12`
                            -> the commit exists in the pinned clone and is an
                               ancestor of the pin
-  4. translations          `X.zh-CN.md` cites exactly what `X.md` cites
+  5. translations          `X.zh-CN.md` cites exactly what `X.md` cites
 
-Only inline code spans (backticks) outside fenced code blocks are scanned, so
-syntax examples inside ``` fences are never mistaken for real anchors.
+Inline code spans (backticks) outside fenced code blocks are scanned for forms 2
+and 4, so syntax examples inside ``` fences are never mistaken for real anchors.
+Form 3 is scanned on the whole line -- a link's destination lives in `(...)`, not
+in backticks -- but still only outside fenced code blocks, for the same reason.
 
 Exit status: 0 if every anchor resolved (including the case of no anchors at
 all), 1 if any anchor failed, 2 on a usage or configuration error.
@@ -41,7 +49,7 @@ from pathlib import Path
 DEFAULT_TARGETS = [
     "study", "points",
     "matrix.md", "matrix.zh-CN.md",
-    "LOG.md", "LOG.zh-CN.md",
+    "LOG.md",
 ]
 
 
@@ -92,6 +100,42 @@ COMMIT_RE = re.compile(
     r"^(?:(?P<repo>[A-Za-z0-9._-]+)@(?P<xsha>[0-9a-fA-F]{7,40})|(?P<sha>[0-9a-f]{8,40}))$"
 )
 
+# Link form: a GitHub "blob" permalink with a line fragment.
+#
+#   https://github.com/<owner>/<repo>/blob/<sha>/<path>#L97
+#   https://github.com/<owner>/<repo>/blob/<sha>/<path>#L97-L120
+#
+# This is the shape a reader can click, so notes written for a human use it
+# instead of `repo@sha:path:line`. It carries no pin *name*, so the repository is
+# identified the only way it can be: <owner>/<repo> is matched against the
+# upstream url of each pin in repos/pins.tsv (see upstream_slug).
+#
+# Unlike forms 2 and 4 this is matched anywhere on the line rather than inside a
+# code span, because a link's destination sits in `[text](here)` -- never in
+# backticks. The `#L<n>` fragment is required: a blob link without one is a file
+# link, not a line anchor, and is left alone.
+#
+# <ref> is deliberately permissive rather than "7-40 hex". A link on a branch or
+# tag (`/blob/main/...#L97`) looks exactly like an anchor and drifts the moment
+# the branch moves -- the one failure this whole script exists to catch -- so it
+# is matched here and reported as `unpinned-ref`, not silently skipped.
+GITHUB_LINK_RE = re.compile(
+    r"https://github\.com/"
+    r"(?P<owner>[A-Za-z0-9][A-Za-z0-9._-]*)/(?P<repo>[A-Za-z0-9][A-Za-z0-9._-]*)"
+    r"/blob/(?P<ref>[^/\s#?)\]\"'`<>]+)/(?P<path>[^\s#?)\]\"'`<>]+)"
+    r"#L(?P<line>\d+)(?:-L(?P<end>\d+))?"
+)
+
+# The upstream url of a pin, reduced to the `owner/repo` a link would carry.
+# https / ssh / git forms are all accepted, with or without `.git` and a trailing
+# slash, because pins.tsv is hand-editable and the exact spelling is not the
+# point -- what the link has to agree with is which repository it is.
+GITHUB_UPSTREAM_RE = re.compile(
+    r"^(?:https://|http://|git://|ssh://git@|git\+https://|git@)github\.com[:/]"
+    r"(?P<owner>[A-Za-z0-9][A-Za-z0-9._-]*)/(?P<repo>[A-Za-z0-9][A-Za-z0-9._-]*?)"
+    r"(?:\.git)?/?$"
+)
+
 # Inline code spans: a run of backticks, content, the same run again.
 CODE_SPAN_RE = re.compile(r"(?P<ticks>`+)(?P<body>[^\n]+?)(?P=ticks)")
 
@@ -139,6 +183,30 @@ def load_pins(pins_file: Path) -> dict[str, Pin]:
             raise ConfigError(f"{pins_file}:{lineno}: duplicate pin {name!r}")
         pins[name] = Pin(name, url, commit, note)
     return pins
+
+
+def upstream_slug(url: str) -> str | None:
+    """`owner/repo`, lowercased, for a GitHub upstream url -- or None if not one."""
+    m = GITHUB_UPSTREAM_RE.match(url.strip())
+    if not m:
+        return None
+    return f"{m.group('owner')}/{m.group('repo')}".lower()
+
+
+def index_by_upstream(pins: dict[str, Pin]) -> dict[str, list[str]]:
+    """Map `owner/repo` -> the pin names whose upstream is that repository.
+
+    A list, not a single name: two pins may legitimately track the same upstream
+    at different commits, and in that case a link naming only `owner/repo` cannot
+    say which one it means. That is reported per reference (`ambiguous-repo`)
+    rather than raised here, so one ambiguous link does not stop the whole run.
+    """
+    index: dict[str, list[str]] = {}
+    for pin in pins.values():
+        slug = upstream_slug(pin.url)
+        if slug is not None:
+            index.setdefault(slug, []).append(pin.name)
+    return index
 
 
 # --------------------------------------------------------------------------
@@ -218,6 +286,11 @@ class Ref:
     line: int | None = None
     end: int | None = None
     tentative: bool = False
+    # Link form only. `slug` is the `owner/repo` the link named, resolved to a
+    # pin name in verify() where the pins are in hand; `raw_ref` is set instead
+    # of `commit` when the link points at something that is not a commit SHA.
+    slug: str | None = None
+    raw_ref: str | None = None
 
 
 @dataclass
@@ -281,13 +354,36 @@ def scan(file: Path) -> Artifact:
                 continue
         if fence is not None:
             continue
+        # (column, Ref) so the two scanners below can be merged back into the
+        # order a reader sees on the line, whichever one matched first.
+        found: list[tuple[int, Ref]] = []
+        for link in GITHUB_LINK_RE.finditer(raw):
+            ref_text = link.group("ref")
+            is_sha = re.fullmatch(r"[0-9a-fA-F]{7,40}", ref_text) is not None
+            found.append((
+                link.start(),
+                Ref(
+                    kind="anchor",
+                    file=file,
+                    lineno=idx + 1,
+                    token=link.group(0),
+                    repo=None,  # resolved from slug in verify()
+                    commit=ref_text.lower() if is_sha else None,
+                    path=link.group("path"),
+                    line=int(link.group("line")),
+                    end=int(link.group("end")) if link.group("end") else None,
+                    slug=f"{link.group('owner')}/{link.group('repo')}".lower(),
+                    raw_ref=None if is_sha else ref_text,
+                ),
+            ))
         for span in CODE_SPAN_RE.finditer(raw):
             token = span.group("body").strip()
             if not token:
                 continue
             a = ANCHOR_RE.match(token)
             if a:
-                art.refs.append(
+                found.append((
+                    span.start(),
                     Ref(
                         kind="anchor",
                         file=file,
@@ -298,13 +394,14 @@ def scan(file: Path) -> Artifact:
                         path=a.group("xpath") or a.group("path"),
                         line=int(a.group("line")),
                         end=int(a.group("end")) if a.group("end") else None,
-                    )
-                )
+                    ),
+                ))
                 continue
             c = COMMIT_RE.match(token)
             if c:
                 sha = (c.group("xsha") or c.group("sha")).lower()
-                art.refs.append(
+                found.append((
+                    span.start(),
                     Ref(
                         kind="commit",
                         file=file,
@@ -315,8 +412,9 @@ def scan(file: Path) -> Artifact:
                         # A bare all-digit token might be a decimal literal rather
                         # than a SHA; only the clone can tell. See COMMIT_RE.
                         tentative=bool(c.group("sha")) and sha.isdigit(),
-                    )
-                )
+                    ),
+                ))
+        art.refs.extend(ref for _, ref in sorted(found, key=lambda pair: pair[0]))
     if fence is not None:
         # Everything from here to EOF was skipped as if it were code. Say so
         # rather than reporting success: an unclosed fence is the one way the
@@ -393,6 +491,7 @@ def verify(root: Path, arts: list[Artifact], pins: dict[str, Pin]) -> tuple[list
     problems: list[Problem] = []
     clones: dict[str, Clone] = {}
     absent_reported: set[str] = set()
+    by_upstream = index_by_upstream(pins)
     checked = 0
 
     def clone_for(name: str) -> Clone:
@@ -422,6 +521,30 @@ def verify(root: Path, arts: list[Artifact], pins: dict[str, Pin]) -> tuple[list
 
         for ref in art.refs:
             checked += 1
+            # A link names a repository by its upstream url, not by pin name, so
+            # the pin has to be looked up before anything else can be said.
+            if ref.slug is not None and ref.repo is None:
+                candidates = by_upstream.get(ref.slug, [])
+                if not candidates:
+                    problems.append(Problem(art.file, ref.lineno, "unknown-repo",
+                                            f"`{ref.token}` links into github.com/{ref.slug}, which no "
+                                            f"pin in repos/pins.tsv points at"))
+                    continue
+                if len(candidates) > 1:
+                    problems.append(Problem(art.file, ref.lineno, "ambiguous-repo",
+                                            f"`{ref.token}` links into github.com/{ref.slug}, but "
+                                            f"{len(candidates)} pins point there "
+                                            f"({', '.join(sorted(candidates))}) — write it as "
+                                            f"`<repo>@<commit>:{ref.path}:{ref.line}` to say which"))
+                    continue
+                ref.repo = candidates[0]
+                if ref.raw_ref is not None:
+                    problems.append(Problem(art.file, ref.lineno, "unpinned-ref",
+                                            f"`{ref.token}` is on {ref.raw_ref!r}, which is not a commit "
+                                            f"SHA — a link on a branch or tag moves when it moves, so it "
+                                            f"proves nothing; use the pinned commit "
+                                            f"{pins[ref.repo].commit[:12]}"))
+                    continue
             if ref.repo is None:
                 problems.append(Problem(art.file, ref.lineno, "no-repo",
                                         f"`{ref.token}` has no repo: add front matter `repo:`/`commit:` "

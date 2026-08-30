@@ -24,6 +24,14 @@ fence-nested-ok.md	0	-	anchors=0
 fence-quoted.md	1	line-out-of-range	anchors=1
 fence-unclosed.md	1	unclosed-fence	-
 line-out-of-range.md	1	line-out-of-range	-
+link-bad-range.md	1	bad-range	anchors=1
+link-fenced.md	0	-	anchors=0
+link-line-out-of-range.md	1	line-out-of-range	anchors=1
+link-no-fragment.md	0	-	anchors=0
+link-no-such-file.md	1	no-such-file	anchors=1
+link-ok.md	0	-	anchors=3
+link-unknown-repo.md	1	unknown-repo	anchors=1
+link-unpinned-ref.md	1	unpinned-ref	anchors=1
 missing-commit.md	1	missing-commit	-
 no-repo.md	1	no-repo	-
 no-such-file.md	1	no-such-file	-
