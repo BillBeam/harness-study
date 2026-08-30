@@ -1,0 +1,38 @@
+# 每个 PR 与每次 main 推送都跑一遍：materialize 钉住的仓库、校验锚点、自检校验器。任一步失败即红。
+name: 校验
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: 同步与校验
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出本仓库
+        uses: actions/checkout@v4
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # repos/ 下的克隆不入库，所以每次跑都要先按 repos/pins.tsv 拉一遍；
+      # 少了这一步，每条锚点都会以 repo-absent 失败。
+      - name: 拉取钉住的目标仓库
+        run: make sync
+
+      - name: 校验锚点
+        run: make check
+
+      - name: 自检校验器
+        run: make selftest
