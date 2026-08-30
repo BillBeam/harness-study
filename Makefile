@@ -4,8 +4,9 @@
 # artifacts against the commit its target repository is pinned to.
 
 PYTHON ?= python3
+VARIANT ?= default
 
-.PHONY: help check check-v selftest sync status run
+.PHONY: help check check-v selftest sync status run run-dsh
 
 help:  ## show this help
 	@grep -hE '^[a-z-]+:.*?##' $(MAKEFILE_LIST) | sort | \
@@ -22,6 +23,9 @@ selftest:  ## prove the checker itself still detects each failure mode
 
 run:  ## run mini-swe-agent on the fixed task, writing study/mini-swe-agent/trace/
 	@scripts/run_mini.sh
+
+run-dsh:  ## run DeepSeek Harness on the same task (VARIANT=default|minimal)
+	@scripts/run_dsh.sh $(VARIANT)
 
 sync:  ## materialise every pinned repository at its pinned commit
 	@scripts/pin.sh sync

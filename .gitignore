@@ -3,10 +3,12 @@
 /repos/*
 !/repos/pins.tsv
 !/repos/README.md
-!/repos/README.zh-CN.md
 
 # Local scratch
 .venv/
 __pycache__/
 *.pyc
 .DS_Store
+
+# dsh 运行的工作副本与本地 DSH_HOME（不入库）
+/.dsh-run/

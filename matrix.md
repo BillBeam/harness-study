@@ -1,7 +1,5 @@
 # 矩阵
 
-> 与 [matrix.zh-CN.md](matrix.zh-CN.md) 内容相同。本仓库的产物只写中文，所以这份表没有英文版；两个文件并存，是为了让校验器的译文对照规则（`X.zh-CN.md` 必须与 `X.md` 引用同一批锚点）继续成立。
-
 行是 `checklist.md` 第三版的全部 78 行，按清单的组排列，行号沿用清单第三版的编号：第
 1–68 行是第二版原有的行（其中第 2、29、31、41 行在第三版改过措辞），第 69–78 行是这一
 版新增、各自排在所属组末尾的行。
@@ -9,11 +7,15 @@
 列 `mini-swe-agent` 逐行填 `study/mini-swe-agent/census-findings.md` 第一节（机制族汇总）
 与第二节（清单有、仓库没有）的结论：**有**给代表性链接，**部分有**给链接再加一句缺在哪，
 **没有**给的链接指向能证明这条缺席的那段代码。第 69–78 行来自同一份文件的第三节（仓库有、
-清单没有），那正是这十行的出处。链接与 `census-findings.md` 完全同源，`make check` 一并校验。
+清单没有），那正是这十行的出处。除第 37、57、68 三行外，链接与 `census-findings.md` 完全
+同源，`make check` 一并校验。
 
-**只填不评**：格子里只复述 `census-findings.md` 已经写下的内容，不打「不变核」或「补偿层」
-标签，也不做跨仓库比较。第 37、57、68 行的格子写「未分配」，因为第一、二节确实没有给这三
-行分配任何条目——那是一处待补的空缺，不是一个判断。
+第 37、57、68 行原先写「未分配」：普查的第一、二节没有给这三行落上任何条目。本卡按钉住提
+交上的代码直接补齐了这三格，链接与其余各格一样进 `make check`；它们不与 `census-findings.md`
+同源这一点，记在该文件第八节。
+
+**只填不评**：格子里只复述 `census-findings.md` 已经写下的内容（补齐的三格只复述所链代码
+本身写着的内容），不打「不变核」或「补偿层」标签，也不做跨仓库比较。
 
 | 行 | 技术点 | mini-swe-agent |
 | --- | --- | --- |
@@ -61,7 +63,7 @@
 | 34 | 确定性校验器的接入：测试、lint、编译、类型检查；成功静默、失败详述 | 没有：harness 一次都不主动跑校验器，提示词让模型自己写脚本、自己跑、自己看结果（[config/default.yaml:25-31](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/config/default.yaml#L25-L31)）。 |
 | 35 | 输出消毒；密钥从工具环境剥离 | 没有，而且反过来：本地环境把整个 os.environ 合并进子进程环境（[local.py:29](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/environments/local.py#L29)）；容器类环境相反，用 forward_env 白名单（[docker.py:21-25](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/environments/docker.py#L21-L25)）。 |
 | 36 | 预算与速率限制 | 部分有：进程级单例按环境变量设总花费与总次数上限（[litellm_model.py:110-112](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/models/litellm_model.py#L110-L112)）；缺速率控制——对上游 429 的处理是指数退避重试（[retry.py:19-24](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/models/utils/retry.py#L19-L24)）。 |
-| 37 | 文件编辑原语：专用编辑工具还是 bash 加 sed；陪训过的编辑格式 | 第一、二节未给此行分配条目（[census-findings.md](study/mini-swe-agent/census-findings.md)）；已记入本卡卡外发现。 |
+| 37 | 文件编辑原语：专用编辑工具还是 bash 加 sed；陪训过的编辑格式 | 有：没有专用编辑工具，编辑靠 bash 加 sed 与 heredoc，提示词里整段教（[config/default.yaml:60-103](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/config/default.yaml#L60-L103)）；macOS 的 sed 分支是 jinja 条件（[config/default.yaml:72-76](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/config/default.yaml#L72-L76)）。 |
 | 38 | 观察结果的渲染：模板、占位、错误信息的形态 | 有：把执行结果按模板渲染成消息，超一万字符时只留头尾各 5000（[actions_toolcall.py:91-94](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/models/utils/actions_toolcall.py#L91-L94)）。 |
 | 39 | 程序化工具调用：一段脚本批量调工具，中间结果不进上下文 | 没有：只有一个工具，且每条命令的输出都会渲染成一条消息进历史（[actions_toolcall.py:79-113](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/models/utils/actions_toolcall.py#L79-L113)）。 |
 | 40 | 浏览器与外部系统的接入方式：自主浏览 agent、驱动页面、SaaS 连接器 | 没有：七种环境全部是 shell 执行器（[environments/__init__.py:8-16](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/environments/__init__.py#L8-L16)）。 |
@@ -85,7 +87,7 @@
 | 54 | 规划脚手架：计划文件、待办、阶段状态机 | 没有：一步就是一行——调模型，执行它产出的动作，没有阶段也没有状态机（[agents/default.py:126-128](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/agents/default.py#L126-L128)）。 |
 | 55 | 子代理的派生、回收、权限收缩；编排的表达方式——逐个派还是一段脚本批量派、预算 | 没有：agent 只持有一个 model 和一个 env，没有任何指向别的 agent 的引用（[agents/default.py:39-50](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/agents/default.py#L39-L50)）。 |
 | 56 | 模型路由：规划与机械步用不同模型；中途向更强模型求助 | 没有按任务性质的路由：两个元模型只按调用次序换人，跟这一步在做什么无关（[roulette.py:59-64](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/models/extra/roulette.py#L59-L64)）。 |
-| 57 | 退出拦截与重新注入 | 第一、二节未给此行分配条目（[census-findings.md](study/mini-swe-agent/census-findings.md)）；已记入本卡卡外发现。 |
+| 57 | 退出拦截与重新注入 | 部分有：没有自动的退出拦截与重注入，有人工版——InteractiveAgent 在 Submitted 后先问用户要不要追加新任务再放行（[interactive.py:144-160](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/agents/interactive.py#L144-L160)）。 |
 | 58 | 崩溃恢复 | 没有：未捕获异常先追加一条带 traceback 的 exit 消息、落一次盘，然后原样重抛，进程就此结束（[agents/default.py:117-119](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/agents/default.py#L117-L119)）。 |
 | 76 | 控制流的载体：返回值、状态标志、还是携带消息的异常；异常层次给中间层留的拦截点 | 有：异常构造时带上要追加的消息，被谁接住就由谁把消息追加进对话（[exceptions.py:4-6](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/exceptions.py#L4-L6)）；子类分级是为了让 InteractiveAgent 能按类型分别拦截（[interactive.py:75-94](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/agents/interactive.py#L75-L94)）。 |
 | | **横切** | |
@@ -98,7 +100,7 @@
 | 65 | 多 agent 编排与交接；共享状态与通信协议 | 没有：一次运行只造一个 model、一个 env、一个 agent（[run/mini.py:99-102](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/run/mini.py#L99-L102)）。 |
 | 66 | harness 自身的度量与优化回路：可搜索、可进化、无回归改进 | 没有：有基准入口能跑分，但结果只是写进 preds.json，没有任何把分数回喂去改 harness 的回路（[swebench.py:97-108](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/run/benchmarks/swebench.py#L97-L108)）。 |
 | 67 | 安全治理与审计面：记忆写入、路由变更、工具权限；什么可持久变化、什么必须审核 | 没有：唯一的权限判断是一条正则白名单，命中就不问、不命中就问一次（[interactive.py:162-163](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/agents/interactive.py#L162-L163)）。 |
-| 68 | 部署形态：本地优先、云端沙箱、自托管 | 第一、二节未给此行分配条目（[census-findings.md](study/mini-swe-agent/census-findings.md)）；已记入本卡卡外发现。 |
+| 68 | 部署形态：本地优先、云端沙箱、自托管 | 部分有：本地优先的命令行工具（[run/mini.py:54](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/run/mini.py#L54)），执行侧可选本地加六种容器或沙箱（[environments/__init__.py:8-16](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/environments/__init__.py#L8-L16)）；没有云端 harness 服务与自托管服务端。 |
 | 77 | 组件契约的表达方式：抽象基类、协议、还是纯约定；换一个实现的代价；扩展协议是否只是 import 路径 | 有：Model、Environment、Agent 是三个 typing.Protocol，三层实现之间没有任何继承关系（[__init__.py:43-80](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/__init__.py#L43-L80)）；工厂先查短名表，查不到就当完整 import 路径（[agents/__init__.py:17-19](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/agents/__init__.py#L17-L19)）。 |
 | 78 | 批量运行的重入：跳过已完成、结果文件的一致性维护与失败实例的处理 | 有：已在 preds.json 里的实例默认跳过，--redo-existing 关掉这个行为（[swebench.py:229-232](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/run/benchmarks/swebench.py#L229-L232)）；每个实例开跑前先把自己从结果文件里删掉、并删掉上次的轨迹文件（[swebench.py:130-133](https://github.com/SWE-agent/mini-swe-agent/blob/25941c89cfbc91eb40b3f8756348c91d9977d57e/src/minisweagent/run/benchmarks/swebench.py#L130-L133)）。 |
 
@@ -107,5 +109,6 @@
 | 名称 | 上游 | 钉住提交 | 笔记 |
 | --- | --- | --- | --- |
 | mini-swe-agent | SWE-agent/mini-swe-agent | `mini-swe-agent@25941c89cfbc91eb40b3f8756348c91d9977d57e` | [study/mini-swe-agent](study/mini-swe-agent/) |
+| deepseek-harness | deepseek-ai/deepseek-harness | `deepseek-harness@cd5ef8148158c3a752a658978873241fdf8e2bbc` | [study/deepseek-harness](study/deepseek-harness/) |
 
 pin 以 `repos/pins.tsv` 为准，本表是给人读的副本。

@@ -1,4 +1,4 @@
-技术点清单（第二版，2026-08-30）
+技术点清单（第三版，2026-08-30）
 
 第三版（2026-08-30）：并入 mini-swe-agent 普查残差 14 条——10 条新增为第 69–78 行，4 条并入第 2、29、31、41 行；「打包、依赖与工程配置」不入表，不满足机制判据
 
@@ -6,7 +6,7 @@
 
 机制判据：一段代码若改变了下列五者之一，即为一个机制——模型看见什么；模型的输出造成什么；什么活过上下文窗口；循环是否、何时、从哪里再转；外部能观察到什么。
 
-出处标记：[Gu] UC Berkeley《Scaling the Harness》2026-05；[Code] 《Code as Agent Harness》2026-05；[LC] LangChain《The Anatomy of an Agent Harness》2026-03；[Pyd] Pydantic AI Harness 文档 2026-06 至 08；[DS] DeepSeek Harness 2026-08；[OAI] OpenAI《Harness engineering》2026-02；[Anth] Anthropic《Scaling Managed Agents》2026-04 与两篇长程 harness 文章；[Osm] Osmani 2026-04；[Ras] Raschka 2026-04；[Win] Winder 2026-08；[S2] 本仓库 S2 定位实证；[mini] mini-swe-agent 已见；[hermes] hermes 材料；[归纳] 无外部来源；[mini] mini-swe-agent 普查残差。
+出处标记：[Gu] UC Berkeley《Scaling the Harness》2026-05；[Code] 《Code as Agent Harness》2026-05；[LC] LangChain《The Anatomy of an Agent Harness》2026-03；[Pyd] Pydantic AI Harness 文档 2026-06 至 08；[DS] DeepSeek Harness 2026-08；[OAI] OpenAI《Harness engineering》2026-02；[Anth] Anthropic《Scaling Managed Agents》2026-04 与两篇长程 harness 文章；[Osm] Osmani 2026-04；[Ras] Raschka 2026-04；[Win] Winder 2026-08；[S2] 本仓库 S2 定位实证；[mini] mini-swe-agent（已见与普查残差）；[hermes] hermes 材料；[归纳] 无外部来源。
 
 感知：模型看见什么
 

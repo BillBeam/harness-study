@@ -1,57 +1,36 @@
 # harness-study
 
-> 中文：[README.zh-CN.md](README.zh-CN.md)
+一个用来细读别人 agent harness 的学习仓库。
 
-A learning repository for reading other people's agent harnesses closely.
-
-The problem it solves: notes about code rot silently. You write "the retry loop
-is in `models/litellm_model.py:82`", the upstream repo moves on, and a year
-later the line number points at an import. This repo makes that failure
-*loud* — every code reference is checked against a pinned commit of the
-repository it points into, and the check runs in one command.
+它解决的问题是：**关于代码的笔记会悄悄失效**。你写下"重试循环在 `models/litellm_model.py:82`"，上游继续演进，一年后那个行号指向的是一条 import。这个仓库让这种失效变得**响亮**——每一条代码引用都对着目标仓库的一个钉住提交校验，而校验只需一条命令。
 
 ```
 make check
 ```
 
-That is the one command. It exits 0 when every anchor in `study/` and `points/`
-resolves, and non-zero with a `file:line` report when one does not. (On a fresh
-clone, run `make sync` once first — it materialises the pinned repositories the
-check reads. `make check` tells you so if you forget.)
+这就是那一条命令。`study/` 和 `points/` 里每条锚点都解析成功时退 0，否则退非 0，并给出**笔记自己的 `文件:行号`**。（全新 clone 上先跑一次 `make sync` materialize 被钉住的仓库；忘了的话 `make check` 会提醒你。）
 
-**What it does not check.** An anchor proves a *location* still exists; it says
-nothing about whether the prose around it is true. This is not hypothetical: a
-review of the first note in this repository found its central claim about
-mini-swe-agent was wrong while all fifteen of its anchors resolved. Anchors keep
-notes honest about where they point, and nothing else. Claims still need a
-reader.
+**它不校验什么。** 锚点证明的是一个**位置**仍然存在，对它周围那段散文是否为真只字未提。这不是假设：本仓库第一篇笔记经审查发现，关于 mini-swe-agent 的核心论断是错的，而它的十五条锚点全部解析通过。锚点让笔记对"指向哪里"保持诚实，仅此而已。论断仍然需要一个读者。
 
-## Layout
+## 目录
 
-| Path | Holds |
+| 路径 | 放什么 |
 | --- | --- |
-| `repos/` | pinned target repositories. `repos/pins.tsv` is tracked; the clones under it are not. |
-| `study/<repo>/` | artifacts for one target repository — notes, traces, reading order. |
-| `points/` | technical points: one file per idea, cutting across repositories. |
-| `scripts/` | `pin.sh` (pin and materialise targets), `check_anchors.py` (the check), `selftest.sh`. |
-| `matrix.md` | which repository × which technical point, and where the note is. |
-| `LOG.md` | dated log of what was read and what came of it. |
-| `tests/` | fixtures for the checker itself. Never scanned by `make check`. |
+| `repos/` | 钉住的目标仓库。`repos/pins.tsv` 入库，其下的克隆不入库 |
+| `study/<repo>/` | 单个目标仓库的产物——笔记、追踪记录、阅读顺序 |
+| `points/` | 技术点：一个想法一个文件，横切多个仓库 |
+| `scripts/` | `pin.sh`（钉住并 materialize 目标）、`check_anchors.py`（校验）、`selftest.sh` |
+| `matrix.md` | 哪个仓库 × 哪个技术点，以及笔记在哪 |
+| `LOG.md` | 按日期记录读了什么、读出了什么 |
+| `tests/` | 校验器自己的夹具。**不在** `make check` 扫描范围内 |
 
-Chinese versions sit beside their English originals with a `.zh-CN` suffix
-(this file's is `README.zh-CN.md`). They go through the same check: a Chinese
-note under `study/` or `points/` has its anchors verified exactly like an
-English one, and a translation must cite exactly what its original cites
-(`translation-drift` otherwise) -- so the pair cannot quietly stop saying the
-same thing.
+本仓库的产物只写中文，一份文档一个文件，不再有 `.zh-CN` 后缀的译文，也不再有译文对照这条校验规则。
 
-## Anchors
+## 锚点
 
-An **anchor** is a reference into a target repository that the checker can
-prove still resolves. Write anchors inside backticks in ordinary prose.
+**锚点**是一条指向目标仓库、且校验器能证明其仍然解析成功的引用。锚点写在普通行文中的反引号里。
 
-Give a note front matter naming the repository and the commit it was written
-against, and then use the short form:
+给笔记加上 front matter，写明它对着哪个仓库、哪个提交写成，之后就可以用短形式：
 
 ```markdown
 ---
@@ -59,97 +38,63 @@ repo: mini-swe-agent
 commit: 25941c89cfbc91eb40b3f8756348c91d9977d57e
 ---
 
-The agent's control loop is `src/minisweagent/agents/default.py:96`, and the
-budget guard that ends a run sits at `src/minisweagent/agents/default.py:132-147`.
+agent 的控制循环是 `src/minisweagent/agents/default.py:96`，
+结束一次运行的预算守卫在 `src/minisweagent/agents/default.py:132-147`。
 ```
 
-Three shapes are recognised:
+识别三种形态：
 
-| Shape | Example | Checked |
+| 形态 | 例子 | 校验什么 |
 | --- | --- | --- |
-| code anchor, short | `path/to/file.py:97` or `path/to/file.py:97-120` | blob exists at the pinned commit; line(s) in range |
-| code anchor, explicit | `repo@25941c89:path/to/file.py:97` | same, at the named commit |
-| commit reference | `af906e86` (8+ hex) or `repo@af906e86` (7+ hex) | commit is in the clone and is an ancestor of the pin |
-| translation pair | `X.md` and `X.zh-CN.md` | both cite the same set of the above |
+| 代码锚点，短形式 | `path/to/file.py:97` 或 `path/to/file.py:97-120` | blob 在钉住提交上存在，行号在范围内 |
+| 代码锚点，显式 | `repo@25941c89:path/to/file.py:97` | 同上，在指定提交上 |
+| 提交引用 | `af906e86`（8 位以上十六进制）或 `repo@af906e86`（7 位以上） | 提交在克隆里，且是 pin 的祖先 |
 
-Rules worth knowing:
+值得知道的规则：
 
-- **Front matter `commit:` must equal the current pin.** It is an assertion that
-  the note was written against today's snapshot, not an alternate target. When a
-  pin moves, every note pinned to the old commit fails, which is the prompt to
-  re-read them.
-- **Short-form anchors always resolve at the pin.** To point at history on
-  purpose, use the explicit form; the commit must be an ancestor of the pin, so
-  a note can never quietly reference code outside the pinned history.
-- **Fenced code blocks are not scanned**, including a fence indented under a
-  list item, one inside a blockquote, and a longer fence quoting a shorter one —
-  so a note *about* fence syntax is safe. A fence that is never closed is
-  reported (`unclosed-fence`) rather than silently swallowing the rest of the
-  file, because a silent skip is the one way this checker could claim success
-  while blind.
-- **A short-form path needs a `/` or a `.ext`.** That keeps `localhost:8080` out
-  of the checker's way. If a real path fits neither shape, use the explicit form.
-- **A token that looks like an anchor but does not resolve is an error, not a
-  skip.** If prose in backticks is mistaken for an anchor, drop the backticks.
-  `example.com:443` is the shape most likely to trip this.
-- **A bare commit reference needs 8+ lowercase hex**, which keeps English words
-  out. One exception is unavoidable: an all-digit token is genuinely ambiguous
-  (about 2% of abbreviated SHAs are all decimal), so it is resolved against the
-  clone — a real SHA is checked like any other, a plain number is ignored. The
-  cost is that a *mistyped* all-digit SHA is ignored too. Write an all-digit
-  hash as `repo@12345678` to have it checked unconditionally.
+- **front matter 的 `commit:` 必须等于当前的 pin。** 它是一句断言——"这篇笔记是对着今天这个快照写的"，而不是另一个解析目标。pin 一移动，所有写在旧提交上的笔记全部失败，这正是"该重读了"的提示。
+- **短形式锚点永远在 pin 上解析。** 要刻意指向历史就用显式形式；该提交必须是 pin 的祖先，所以笔记不可能悄悄引用钉住历史之外的代码。
+- **围栏代码块不会被扫描**，包括列表项下缩进的围栏、引用块里的围栏，以及长围栏包短围栏——所以一篇**讲**围栏语法的笔记是安全的。始终未闭合的围栏会被报出来（`unclosed-fence`），而不是静默吞掉文件剩余部分：静默跳过是这个校验器唯一可能"眼瞎却宣称成功"的途径。
+- **短形式路径需要含 `/` 或以 `.ext` 结尾。** 这样 `localhost:8080` 就不会被卷进来。真实路径若两种形状都不满足，用显式形式。
+- **长得像锚点但解析不了的 token 是错误，不是跳过。** 行文中的反引号内容被误判成锚点时，去掉反引号即可。最容易踩到的形状是 `example.com:443`。
+- **裸提交引用需要 8 位以上小写十六进制**，以挡住英文单词。有一个例外躲不掉：全数字 token 天然歧义（约 2% 的缩写 SHA 是纯十进制），因此它会向克隆求证——真 SHA 照常校验，普通数字忽略。代价是**打错的**全数字 SHA 也会被忽略。想让全数字哈希无条件被校验，写成 `repo@12345678`。
 
-Run `python3 scripts/check_anchors.py -v` to see every anchor the checker found,
-or `--json` for a machine-readable report.
+跑 `python3 scripts/check_anchors.py -v` 可以看到校验器找到的每一条锚点，`--json` 输出机器可读报告。
 
-## Pinning a target repository
+## 钉住一个目标仓库
 
-A pin is one tab-separated record in `repos/pins.tsv`:
+一个 pin 就是 `repos/pins.tsv` 里的一条制表符分隔记录：
 
 ```
-name<TAB>url<TAB>40-hex-commit<TAB>note
+name<TAB>url<TAB>40位十六进制提交<TAB>备注
 ```
 
 ```sh
-scripts/pin.sh add <name> <url> [ref]   # resolve ref to a SHA, record it, clone
-scripts/pin.sh sync                     # materialise every pin at its commit
-scripts/pin.sh status                   # pinned vs. on-disk
-scripts/pin.sh update <name> <ref>      # move a pin (then re-run make check)
+scripts/pin.sh add <name> <url> [ref]   # 把 ref 解析成 SHA、记录、克隆
+scripts/pin.sh sync                     # materialize 每个 pin 到其提交
+scripts/pin.sh status                   # 钉住的 vs. 磁盘上的
+scripts/pin.sh update <name> <ref>      # 移动 pin（之后重跑 make check）
 ```
 
-`sync` makes a **full clone** with `HEAD` detached at the pinned commit. Full
-history is the point, not an accident: a study note needs to answer "which
-commit introduced this logic?" months later, and that means `git log -S`,
-`git log -L` and `git blame` have to work offline against the clone. A shallow
-(`--depth`) or blobless (`--filter=blob:none`) clone cannot answer those without
-going back to the network. See `repos/README.md` for the network-policy
-reasoning and the worked archaeology example.
+`sync` 做**全量克隆**，并把 `HEAD` detach 在钉住提交上。保留完整历史是刻意的，不是顺手：一篇研读笔记在几个月后需要回答"这段逻辑是哪次提交引入的"，这意味着 `git log -S`、`git log -L` 和 `git blame` 必须能**离线**对着克隆工作。浅克隆（`--depth`）或无 blob 克隆（`--filter=blob:none`）都答不了，除非回网络。网络策略的推理和一段实做的考古示例见 [`repos/README.md`](repos/README.md)。
 
-The clones are gitignored. Nothing from a target repository is vendored here and
-no target repository is ever modified — `repos/pins.tsv` plus `scripts/pin.sh`
-is enough to reconstruct every checkout exactly.
+克隆被 gitignore。这里不 vendor 任何目标仓库的内容，也从不修改目标仓库——`repos/pins.tsv` 加 `scripts/pin.sh` 就足以精确重建每一个 checkout。
 
-## Adding a study
+## 新增一份研读
 
-0. `make sync` — once per clone, materialise the pinned repositories.
-1. `scripts/pin.sh add <name> <url>` — pin the repository (this syncs it too).
-2. Create `study/<name>/NN-topic.md` with front matter naming the pin and its commit.
-3. Read, and write anchors as you go.
-4. `make check` — until it exits 0.
-5. Add a row to `matrix.md` and an entry to `LOG.md`.
+0. `make sync` —— 每个 clone 做一次，materialize 已钉住的仓库。
+1. `scripts/pin.sh add <name> <url>` —— 钉住仓库（这一步会顺带同步）。
+2. 建 `study/<name>/NN-topic.md`，front matter 写明 pin 与其提交。
+3. 边读边写锚点。
+4. `make check` —— 直到退 0。
+5. 往 `matrix.md` 加一行，往 `LOG.md` 加一条。
 
-## Checking the checker
+## 校验这个校验器
 
 ```
 make selftest
 ```
 
-Runs the checker against `tests/` — an empty artifact set, a known-good note, a
-deliberately wrong anchor, and one case per failure mode — and asserts the exact
-exit code, error codes and, where it matters, *how much was actually looked at*.
-That last part is the difference between "checked it and it was fine" and "never
-looked": without a count, a regression to silence passes as a success.
+对着 `tests/` 跑校验器——空产物集、一篇已知良好的笔记、一条故意写错的锚点、以及每种失败模式各一个用例——断言精确的退出码、错误码，以及在重要的地方**实际看了多少**。最后这点是"查过了而且没问题"和"根本没看"之间的区别：没有计数断言，一次"退化为静默"的回归会被当成成功。
 
-`tests/` lives outside the `make check` scan, so its deliberately broken files
-never affect the real run. Every assertion fails rather than skips — a check
-that quietly declines to run is the same defect the checker exists to prevent.
+`tests/` 在 `make check` 的扫描范围之外，所以它里面那些故意写坏的文件永远不会影响真实运行。每条断言都是**失败**而不是跳过——一个悄悄拒绝运行的检查，和这个校验器要防的是同一种缺陷。
