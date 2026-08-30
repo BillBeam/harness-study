@@ -6,7 +6,7 @@ title: deepseek-harness 普查 · packages/experimental/inspector
 
 # packages/experimental/inspector
 
-钉住提交 `cd5ef8148158c3a752a658978873241fdf8e2bbc` 上这一组的逐文件机制普查，共 155 个文件、794 条证据行。判据、读法与全仓库口径见 [`../census-index.md`](../census-index.md)。
+钉住提交 `cd5ef8148158c3a752a658978873241fdf8e2bbc` 上这一组的逐文件机制普查，共 155 个文件、1069 条证据行。判据、读法与全仓库口径见 [`../census-index.md`](../census-index.md)。
 
 ### packages/experimental/inspector/README.md
 
@@ -1416,3 +1416,438 @@ Runtime 域会话类的再导出。
 - 异常投影分配自增 `exceptionId`，合成 realm 附上执行上下文 id，并递归投影栈轨迹与异常对象（[packages/experimental/inspector/src/worker/cdp/domains/runtime/object-table.ts:283-295](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/object-table.ts#L283-L295)）
 - 暴露句柄时生成形如 `runtime:<连接 id>:<自增序号>` 的 objectId 并记录 realm、句柄与对象组（[packages/experimental/inspector/src/worker/cdp/domains/runtime/object-table.ts:297-308](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/object-table.ts#L297-L308)）
 - 栈轨迹投影对无脚本键的帧填 `'0'`，并递归投影父栈（[packages/experimental/inspector/src/worker/cdp/domains/runtime/object-table.ts:311-323](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/object-table.ts#L311-L323)）
+
+### packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts
+
+单个 DevTools 连接上的 Runtime 域路由器，把 CDP Runtime 方法分派到 Host 与 Client 两类 realm 会话，并维护连接局部的对象表，被 `cdp/session.ts` 构造并转发请求。
+
+- 构造时按连接 id 建立对象表，并订阅 realm 会话集合的开合事件（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:34-40](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L34-L40)）
+- `handle` 按方法名把 `Runtime.enable/disable/evaluate/getProperties/callFunctionOn/awaitPromise/releaseObject/releaseObjectGroup/globalLexicalScopeNames/discardConsoleEntries` 认领为本域处理，其余返回未认领（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:47-85](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L47-L85)）
+- 未认领的 `Runtime.` 方法若其参数指向不支持原生域的 realm，则直接回送错误而不再向下游转发（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:75-83](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L75-L83)）
+- `close` 取消 realm 订阅、释放全部 console 订阅、清空对象表与已宣告的上下文集合（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:88-96](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L88-L96)）
+- `setObjectObserver` 把对象识别回调装入对象表，供 DOM 适配器绑定语义对象（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:102-104](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L102-L104)）
+- `objectRoute` 将连接局部对象 id 解析为 realm 与后端句柄（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:111-113](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L111-L113)）
+- `projectCompletion` 把别的域产生的完成结果经本连接对象表投影为 CDP 结果字段（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:122-128](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L122-L128)）
+- `projectRemoteObject` 把单个 Runtime 值投影为 RemoteObject 字段并分配对象组（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:137-143](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L137-L143)）
+- `releaseProjectedGroup` 丢弃某对象组下为其他域保留的连接局部 id（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:149-151](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L149-L151)）
+- `nativeParameters` 递归遍历参数，将 `objectId` 及以 `ObjectId` 结尾的字段替换为原生后端句柄，遇到不支持原生域的 realm 抛出其理由（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:158-171](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L158-L171)）
+- `resolveObject` 在指定源代对应的 realm 上求值表达式，源不在线或求值抛异常时报错，否则返回投影后的 RemoteObject（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:180-195](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L180-L195)）
+- `enable` 并发启用全部 realm 的 Runtime 后端并逐个挂接 console、宣告上下文；任一失败则回滚已挂接的订阅、清空宣告集合并禁用全部后端后抛出（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:197-214](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L197-L214)）
+- `disable` 先释放全部 console 订阅再禁用各 realm 后端，无论成败都清空对象表与宣告集合（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:216-227](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L216-L227)）
+- `evaluate` 由 `contextId` 选出 realm，注入后端执行上下文后求值并投影完成结果（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:229-237](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L229-L237)）
+- `getProperties` 仅在 `objectId` 是字符串且能解析出路由时认领请求，并把结果投影回该对象所属的对象组（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:239-250](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L239-L250)）
+- `callFunction` 在接收者与显式执行上下文分属不同 realm 时回送错误；两者都缺省时落到 Host realm（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:252-274](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L252-L274)）
+- `awaitPromise` 仅在 promise 对象 id 可解析时认领，并在该对象所属 realm 上等待（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:276-287](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L276-L287)）
+- `releaseObject` 在后端释放句柄后同步从连接对象表删除该 id（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:289-301](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L289-L301)）
+- `releaseObjectGroup` 向该组涉及的每个 realm 发出释放，并在 finally 中清除本地组记录（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:303-312](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L303-L312)）
+- `globalLexicalScopeNames` 选出 realm 并带上后端上下文取回名字列表（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:314-319](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L314-L319)）
+- `discardConsoleEntries` 清空各 realm 的 console 后端并释放名为 `console` 的对象组（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:321-328](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L321-L328)）
+- `realmFromOptionalSelector` 用数字上下文 id 或 uniqueContextId 查找 realm；查不到时负数 id 或 `dsh-client:` 前缀抛"Client 上下文已不可用"，其余回退到 Host（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:337-356](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L337-L356)）
+- `backendContext` 只对原生上下文的 realm 生成后端执行上下文字段，合成上下文一律不传（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:358-369](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L358-L369)）
+- `routeArgument` 在对象参数不属于目标 realm 时抛错，禁止跨 realm 传对象（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:371-381](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L371-L381)）
+- `unsupportedNativeRoute` 扫描上下文 id、uniqueContextId 与全部对象 id 字段，命中不支持原生域的 realm 时返回其理由文本（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:383-405](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L383-L405)）
+- `receiveRealm` 在已 enable 时为新开 realm 启用后端并挂接 console、宣告上下文，启用失败则关闭该会话；realm 关闭时释放其 console 订阅与对象并发送销毁事件（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:407-424](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L407-L424)）
+- `attachConsole` 为支持 console 的 realm 建立一次性订阅，把事件投影后推送到 transport，未 enable 时丢弃（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:426-432](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L426-L432)）
+- `announce` 对合成上下文发送 `Runtime.executionContextCreated`，其名称为 `Client — <label>`、auxData 带 `type: 'dsh-client'` 与 sourceId（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:434-449](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L434-L449)）
+- `destroy` 仅对曾宣告过的合成上下文发送 `Runtime.executionContextDestroyed`（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:451-460](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L451-L460)）
+- `runtimeBackend` 在 realm 的 Runtime 能力为 unsupported 时抛出其理由（[packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts:471-474](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/domains/runtime/session.ts#L471-L474)）
+
+### packages/experimental/inspector/src/worker/cdp/ids.ts
+
+Worker 端 CDP 连接内各类标识的品牌类型与校验函数，被对象表、脚本表等 CDP 适配器使用。
+
+- `cdpStringId` 拒绝空串与超过 16384 字符的字符串 id，并在错误消息中带上字段名（[packages/experimental/inspector/src/worker/cdp/ids.ts:37-42](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/ids.ts#L37-L42)）
+- `cdpNumericId` 要求安全整数且不小于 1，否则抛错（[packages/experimental/inspector/src/worker/cdp/ids.ts:50-53](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/ids.ts#L50-L53)）
+
+### packages/experimental/inspector/src/worker/cdp/protocol.ts
+
+Worker 侧最小 CDP 请求解析与响应发送工具，被 `cdp/session.ts` 和各域会话共用。
+
+- `parseCdpRequest` 校验 id 为非负安全整数、method 为非空字符串、params 为对象，不合法即抛错；params 缺省补为空对象（[packages/experimental/inspector/src/worker/cdp/protocol.ts:29-43](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/protocol.ts#L29-L43)）
+- `cdpError` 构造 `{id, error:{code, message}}` 形状的错误响应（[packages/experimental/inspector/src/worker/cdp/protocol.ts:52-54](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/protocol.ts#L52-L54)）
+- `sendCdpFailure` 把任意抛出物渲染成消息并以 -32000 发回（[packages/experimental/inspector/src/worker/cdp/protocol.ts:62-65](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/protocol.ts#L62-L65)）
+- `respondToCdpRequest` 把异步操作的兑现结果作为 `{id, result}` 发出，拒绝则转为错误响应（[packages/experimental/inspector/src/worker/cdp/protocol.ts:73-82](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/protocol.ts#L73-L82)）
+
+### packages/experimental/inspector/src/worker/cdp/realm-sessions.ts
+
+为单个 DevTools 连接维护"每个活跃 realm 恰好一个后端会话"的集合，由 `cdp/session.ts` 构造、被 Runtime/Debugger 等域订阅。
+
+- 构造时为连接分配随机 `connectionId`，供各域与对象表共用（[packages/experimental/inspector/src/worker/cdp/realm-sessions.ts:19](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/realm-sessions.ts#L19)）
+- 构造时为注册表中已存在的每个 realm 开一个会话，并订阅注册表后续变化（[packages/experimental/inspector/src/worker/cdp/realm-sessions.ts:25-28](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/realm-sessions.ts#L25-L28)）
+- `all` 按注册表顺序（Host 在前、Client 在后）返回当前会话并过滤缺失项（[packages/experimental/inspector/src/worker/cdp/realm-sessions.ts:34-38](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/realm-sessions.ts#L34-L38)）
+- `host` 在 Host 会话缺失时抛错而不是返回空（[packages/experimental/inspector/src/worker/cdp/realm-sessions.ts:44-48](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/realm-sessions.ts#L44-L48)）
+- `byContextId` 经注册表把数字执行上下文 id 解析为本连接会话（[packages/experimental/inspector/src/worker/cdp/realm-sessions.ts:55-58](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/realm-sessions.ts#L55-L58)）
+- `byUniqueContextId` 经注册表把唯一上下文 id 解析为本连接会话（[packages/experimental/inspector/src/worker/cdp/realm-sessions.ts:65-68](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/realm-sessions.ts#L65-L68)）
+- `bySource` 把源代描述解析为本连接会话（[packages/experimental/inspector/src/worker/cdp/realm-sessions.ts:75-78](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/realm-sessions.ts#L75-L78)）
+- `subscribe` 注册会话生命周期观察者并返回移除该观察者的 disposer（[packages/experimental/inspector/src/worker/cdp/realm-sessions.ts:85-88](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/realm-sessions.ts#L85-L88)）
+- `close` 幂等地取消注册表订阅、关闭全部会话并清空监听者（[packages/experimental/inspector/src/worker/cdp/realm-sessions.ts:91-98](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/realm-sessions.ts#L91-L98)）
+- `receiveRealm` 在 realm 开启时新建会话并广播 opened，在关闭时删除并关闭会话后广播 closed（[packages/experimental/inspector/src/worker/cdp/realm-sessions.ts:100-111](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/realm-sessions.ts#L100-L111)）
+- `emit` 对监听者副本逐个派发并吞掉单个监听者的抛出，使兄弟域仍能收到事件（[packages/experimental/inspector/src/worker/cdp/realm-sessions.ts:119-127](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/realm-sessions.ts#L119-L127)）
+
+### packages/experimental/inspector/src/worker/cdp/session.ts
+
+一个 DevTools 连接的总分派器，按固定顺序把 CDP 请求交给 DOM、Runtime、Debugger、原生域、Network 与脚手架处理，由端点在每次 WebSocket 接入时创建。
+
+- 构造时新建本连接的 realm 会话集合，Host realm 不支持原生域即抛错阻止连接建立（[packages/experimental/inspector/src/worker/cdp/session.ts:34-37](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L34-L37)）
+- 构造时依次装配原生域、Runtime、Debugger、DOM 会话，并把 Runtime 的对象观察回调接到 DOM 的对象绑定（[packages/experimental/inspector/src/worker/cdp/session.ts:37-42](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L37-L42)）
+- 订阅源注册表状态变化，在诊断域已 enable 时推送 `DSHInspector.sourcesChanged`（[packages/experimental/inspector/src/worker/cdp/session.ts:43-45](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L43-L45)）
+- `receive` 在请求无法解析时直接关闭该客户端连接（[packages/experimental/inspector/src/worker/cdp/session.ts:52-59](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L52-L59)）
+- 对 `Runtime.releaseObject` 与 `Runtime.releaseObjectGroup` 先通知 DOM 会话释放其投影 id，再进入常规分派（[packages/experimental/inspector/src/worker/cdp/session.ts:61-63](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L61-L63)）
+- 按 DOM、Runtime、Debugger 的顺序尝试认领请求，先认领者处理并终止分派（[packages/experimental/inspector/src/worker/cdp/session.ts:63-65](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L63-L65)）
+- 原生域拥有的方法在转发前把参数中的连接局部对象 id 换成原生句柄（[packages/experimental/inspector/src/worker/cdp/session.ts:66-69](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L66-L69)）
+- `Network.` 前缀方法交给 Network 域并以本会话为事件汇（[packages/experimental/inspector/src/worker/cdp/session.ts:71-72](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L71-L72)）
+- `DSHInspector.enable/disable` 切换本连接的诊断推送开关，`enable` 与 `getSources` 同时回送当前源清单（[packages/experimental/inspector/src/worker/cdp/session.ts:73-81](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L73-L81)）
+- `DSHInspector.getCordisTree` 异步取树后单独回送 `{tree}`，失败时以 -32000 回送错误（[packages/experimental/inspector/src/worker/cdp/session.ts:81-88](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L81-L88)）
+- 其余方法交给页面脚手架，返回未认领哨兵时以 -32601 回送 `Method not found`（[packages/experimental/inspector/src/worker/cdp/session.ts:89-95](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L89-L95)）
+- 分派过程中的同步抛出统一转成 -32000 错误响应，不断开连接（[packages/experimental/inspector/src/worker/cdp/session.ts:97-99](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L97-L99)）
+- `sendEvent` 以 `{method, params}` 形状推送 CDP 事件（[packages/experimental/inspector/src/worker/cdp/session.ts:103-105](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L103-L105)）
+- `close` 按取消源订阅、脱离 Network、关闭 DOM/Runtime/Debugger/原生域、关闭 realm 会话集合的顺序释放资源（[packages/experimental/inspector/src/worker/cdp/session.ts:108-116](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/session.ts#L108-L116)）
+
+### packages/experimental/inspector/src/worker/cdp/target.ts
+
+合成页面目标的最小 CDP 脚手架，供 `cdp/session.ts` 在其他域都未认领时回答 Page/Target/Log/Console/Browser 类方法。
+
+- `CDP_METHOD_NOT_HANDLED` 哨兵把"未认领"与"认领但返回空对象"区分开（[packages/experimental/inspector/src/worker/cdp/target.ts:6](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/target.ts#L6)）
+- 构造一个固定的合成 frame，url 与 securityOrigin 均为 `dsh://host`（[packages/experimental/inspector/src/worker/cdp/target.ts:24-34](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/target.ts#L24-L34)）
+- Page/Target/Log/Console 的若干 enable/disable 类方法一律回空对象成功（[packages/experimental/inspector/src/worker/cdp/target.ts:36-45](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/target.ts#L36-L45)）
+- `Page.getFrameTree` 与 `Page.getResourceTree` 返回只含该合成 frame、无子 frame 与资源的树（[packages/experimental/inspector/src/worker/cdp/target.ts:46-49](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/target.ts#L46-L49)）
+- `Page.getNavigationHistory` 返回单条 `transitionType: 'typed'` 的历史记录（[packages/experimental/inspector/src/worker/cdp/target.ts:50-54](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/target.ts#L50-L54)）
+- `Target.getTargetInfo` 用传入的目标描述回报 `type: 'page'`、已附着、不可访问 opener（[packages/experimental/inspector/src/worker/cdp/target.ts:55-65](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/target.ts#L55-L65)）
+- `Browser.getVersion` 报告协议版本 1.3、固定产品/UA 串以及当前进程的 V8 版本（[packages/experimental/inspector/src/worker/cdp/target.ts:66-73](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/target.ts#L66-L73)）
+- 其余方法返回未认领哨兵，交由调用方回 `Method not found`（[packages/experimental/inspector/src/worker/cdp/target.ts:74-75](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/cdp/target.ts#L74-L75)）
+
+### packages/experimental/inspector/src/worker/entry.ts
+
+Inspector Worker 线程的启动脚本，校验 workerData、启动 Worker 运行时，并通过 parentPort 与 Host 交换 ready/failure/stopped 控制消息。
+
+- 在主线程被加载时直接抛错，拒绝在非 Worker 环境运行（[packages/experimental/inspector/src/worker/entry.ts:9-10](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/entry.ts#L9-L10)）
+- 校验 workerData 为对象且 `hostSourcePort` 是 MessagePort，并解析 Worker 配置，不合法即抛错（[packages/experimental/inspector/src/worker/entry.ts:12-20](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/entry.ts#L12-L20)）
+- `stop` 用一个共享 Promise 保证只关闭一次运行时，随后发出 `stopped` 并关闭控制端口（[packages/experimental/inspector/src/worker/entry.ts:25-32](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/entry.ts#L25-L32)）
+- 控制端口收到消息时先校验协议，合法则触发停止，不合法则回送 `failure` 而不停机（[packages/experimental/inspector/src/worker/entry.ts:34-44](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/entry.ts#L34-L44)）
+- 顶层等待运行时启动，成功时发出带端点信息的 `ready`，失败时发出 `failure` 并立即停机（[packages/experimental/inspector/src/worker/entry.ts:46-55](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/entry.ts#L46-L55)）
+
+### packages/experimental/inspector/src/worker/inspection/cordis-query.ts
+
+把已校验的 Inspector 查询命令在共享语义读取器上执行的单函数模块，被查询路由器调用。
+
+- `executeInspectorQuery` 从读取器取树并以 `{op, tree}` 形状作为查询结果返回（[packages/experimental/inspector/src/worker/inspection/cordis-query.ts:12-17](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-query.ts#L12-L17)）
+
+### packages/experimental/inspector/src/worker/inspection/cordis-store.ts
+
+Worker 侧保存各源最新 Cordis 树快照的仓库，实现记录消费者接口，供 DOM 适配器与查询读取器读取。
+
+- 声明只消费 `CORDIS_TREE_TOPIC` 主题的记录（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:50](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L50)）
+- `replace` 用批次中的最新快照整体替换该源状态，批次无快照则移除该源，变更时广播 `snapshot-changed`（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:58-64](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L58-L64)）
+- `append` 只在批次含更新快照且安装成功时广播变更，忽略无关主题（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:67-70](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L67-L70)）
+- `close` 把该源代最后一棵树标记为 disconnected 并带上原因，把它移到断开队列尾部，超过 `maxDisconnectedTrees` 时按最早顺序删除，再广播 `source-disconnected`（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:73-88](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L73-L88)）
+- `snapshots` 按源准入顺序返回去掉内部索引的快照列表（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:94-96](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L94-L96)）
+- `tree` 把快照分成单个 host 槽与 clients 列表（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:102-108](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L102-L108)）
+- `readTree` 用投影函数产出不带对象路由与 CDP 标识的语义树（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:114-116](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L114-L116)）
+- `resolveObject` 只在源代匹配且连接未断开时按对象键查节点（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:124-131](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L124-L131)）
+- `resolveObjectIdentity` 用 sourceId 与 generation 做同样的代与连接检查后解析对象（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:140-151](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L140-L151)）
+- `resolveObjectInKind` 在同一 kind 的所有已连接源中查找首个命中的节点（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:159-166](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L159-L166)）
+- `subscribe` 注册仓库观察者并返回移除它的 disposer（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:173-176](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L173-L176)）
+- `latest` 按 `maxNodes` 校验并解析每条快照，取 revision 最大者，且当已存快照 revision 不低于候选时保留已存快照（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:178-194](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L178-L194)）
+- `install` 在同代同快照且已连接时不做变更，否则写入新树并重建 `registryId\0handle` 到节点的索引（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:196-212](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L196-L212)）
+- `remove` 同时从断开队列和树表中删除一个源（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:214-217](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L214-L217)）
+- `emit` 逐个通知监听者副本并吞掉单个监听者的抛出（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:223-231](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L223-L231)）
+- `objectKey` 以 NUL 分隔注册表 id 与句柄组成索引键（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:234-236](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L234-L236)）
+- `treeNodes` 用显式栈按前序展开整棵树，避免递归（[packages/experimental/inspector/src/worker/inspection/cordis-store.ts:238-248](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/cordis-store.ts#L238-L248)）
+
+### packages/experimental/inspector/src/worker/inspection/network-store.ts
+
+Worker 侧的网络观察仓库，把各源上报的 fetch 记录规范化为请求生命周期事件与捕获的报文体，并按条数与字节数做有界保留，供 Network 域读取与订阅。
+
+- 声明消费全部 `FETCH_TOPICS` 主题（[packages/experimental/inspector/src/worker/inspection/network-store.ts:94](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L94)）
+- `replace` 先以"source state replaced"关闭该源的在途请求，再按追加方式摄入新记录（[packages/experimental/inspector/src/worker/inspection/network-store.ts:103-106](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L103-L106)）
+- `append` 逐条摄入并吞掉单条记录的解析失败，使后续记录继续被接受（[packages/experimental/inspector/src/worker/inspection/network-store.ts:108-117](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L108-L117)）
+- `close` 把该源所有未完成请求标记为完成并发布带原因的 `request-failed`（canceled 为真），随后执行保留策略（[packages/experimental/inspector/src/worker/inspection/network-store.ts:119-134](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L119-L134)）
+- `replay` 返回按观察顺序保留的请求生命周期事件日志，供新连接重放（[packages/experimental/inspector/src/worker/inspection/network-store.ts:140-142](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L140-L142)）
+- `subscribe` 注册实时变更消费者并返回移除它的 disposer（[packages/experimental/inspector/src/worker/inspection/network-store.ts:149-152](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L149-L152)）
+- `requestBody` 按公开 requestId 返回拼接后的请求体字节及截断与捕获错误元数据（[packages/experimental/inspector/src/worker/inspection/network-store.ts:159-162](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L159-L162)）
+- `responseBody` 在响应头尚未到达时抛错，否则返回响应体与其元数据（[packages/experimental/inspector/src/worker/inspection/network-store.ts:169-173](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L169-L173)）
+- `dispose` 清空监听者、请求表、日志与已用字节计数（[packages/experimental/inspector/src/worker/inspection/network-store.ts:176-182](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L176-L182)）
+- 摄入时以 `sourceId:generation:localId` 组成请求键，并把源时间原点与记录单调时间相加为绝对时间戳（[packages/experimental/inspector/src/worker/inspection/network-store.ts:184-188](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L184-L188)）
+- `fetch/start` 在请求键已存在时抛错，否则建条目并发布 `request-started`（含 url、method、headers、hasBody）后执行保留策略（[packages/experimental/inspector/src/worker/inspection/network-store.ts:189-220](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L189-L220)）
+- 后续记录若找不到对应请求（已被逐出或未开始）则静默丢弃（[packages/experimental/inspector/src/worker/inspection/network-store.ts:221-222](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L221-L222)）
+- `fetch/request-body-end` 合并请求体截断标记与捕获错误（[packages/experimental/inspector/src/worker/inspection/network-store.ts:227-232](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L227-L232)）
+- `fetch/response` 标记响应已见，按小写 mimeType 是否为 `text/event-stream` 决定是否建立 SSE 解析器，并发布 `response-received`（[packages/experimental/inspector/src/worker/inspection/network-store.ts:233-250](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L233-L250)）
+- `fetch/response-body-chunk` 追加响应体，把 SSE 解析器产出的每条消息以递增 eventId 发布为 `event-source-message`，再发出不入日志的 `response-data`（[packages/experimental/inspector/src/worker/inspection/network-store.ts:251-267](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L251-L267)）
+- `fetch/end` 合并响应截断与捕获错误后完成请求，`encodedDataLength` 取实际保留字节数（[packages/experimental/inspector/src/worker/inspection/network-store.ts:268-281](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L268-L281)）
+- `fetch/error` 对未完成请求发布 `request-failed`，且在响应头已到达时把响应体标记为截断并记下错误文本（[packages/experimental/inspector/src/worker/inspection/network-store.ts:282-298](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L282-L298)）
+- `appendBody` 解码 base64、先逐出已完成请求腾出预算，再按剩余 `maxJournalBytes` 截断保留，并累加截断标记与已用字节（[packages/experimental/inspector/src/worker/inspection/network-store.ts:302-318](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L302-L318)）
+- `complete` 保证每个请求只发布一次终态事件并把它推入已完成队列（[packages/experimental/inspector/src/worker/inspection/network-store.ts:320-326](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L320-L326)）
+- `publish` 把事件写入可重放日志后再广播，`emit` 只广播（[packages/experimental/inspector/src/worker/inspection/network-store.ts:328-331](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L328-L331)）
+- `emit` 逐个通知监听者副本并吞掉单个监听者的抛出（[packages/experimental/inspector/src/worker/inspection/network-store.ts:333-341](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L333-L341)）
+- `enforceRetention` 在超出请求条数或日志字节上限时优先逐出最早完成的请求，必要时逐出最早的在途请求并先发布"retained-request limit exceeded"的取消事件（[packages/experimental/inspector/src/worker/inspection/network-store.ts:343-360](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L343-L360)）
+- `evictCompletedFor` 为新到字节腾空间时跳过当前受保护的请求键，无可逐出者则直接返回（[packages/experimental/inspector/src/worker/inspection/network-store.ts:362-369](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L362-L369)）
+- `evict` 归还字节额度、删除请求条目、从日志中抹掉该请求的全部事件并广播 `request-evicted`（[packages/experimental/inspector/src/worker/inspection/network-store.ts:371-378](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L371-L378)）
+- `requestById` 对非字符串 id 与找不到的 id 分别抛出不同错误文本（[packages/experimental/inspector/src/worker/inspection/network-store.ts:380-385](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L380-L385)）
+- `decodeBase64` 用长度、字符集正则和回编码比对三重检查拒绝非规范 base64（[packages/experimental/inspector/src/worker/inspection/network-store.ts:402-409](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L402-L409)）
+- 字段取值函数对非对象载荷、非字符串、非有限数、非布尔、非二元字符串数组的 header 分别抛出具名错误（[packages/experimental/inspector/src/worker/inspection/network-store.ts:411-449](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/network-store.ts#L411-L449)）
+
+### packages/experimental/inspector/src/worker/inspection/query-router.ts
+
+Worker 侧非 CDP 查询协议的准入、执行与有界回送，为 Host MessagePort 与 Client WebSocket 各建一个隔离的查询 peer。
+
+- `open` 建立 peer 并在注册回调中先摘掉该 peer 名下的旧源，再把该源代独占绑定到它（[packages/experimental/inspector/src/worker/inspection/query-router.ts:52-74](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L52-L74)）
+- 注册校验回调要求 peer 与 generation 同时匹配，才认为该源仍归此 peer（[packages/experimental/inspector/src/worker/inspection/query-router.ts:63-64](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L63-L64)）
+- `disconnect` 只在世代匹配时撤销该源的查询访问权（[packages/experimental/inspector/src/worker/inspection/query-router.ts:80-85](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L80-L85)）
+- `close` 关闭全部 peer 并清空源到 peer 的映射（[packages/experimental/inspector/src/worker/inspection/query-router.ts:88-91](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L88-L91)）
+- `accept` 记录被准入的源代、清空在途请求并向路由器注册（[packages/experimental/inspector/src/worker/inspection/query-router.ts:114-119](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L114-L119)）
+- `revoke` 只在 sourceId 与 generation 都匹配时清掉准入状态与在途请求，载体本身保留待后续重新准入（[packages/experimental/inspector/src/worker/inspection/query-router.ts:126-130](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L126-L130)）
+- `receive` 先判定是否查询协议信封，不是则交回调用方（[packages/experimental/inspector/src/worker/inspection/query-router.ts:137-139](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L137-L139)）
+- 请求帧解析失败或 JSON 字节数超过 `maxFrameBytes` 时走 malformed 拒绝路径（[packages/experimental/inspector/src/worker/inspection/query-router.ts:140-148](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L140-L148)）
+- 未准入、已关闭、注册失效或源代与帧不符时回 `stale-source` 错误（[packages/experimental/inspector/src/worker/inspection/query-router.ts:149-155](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L149-L155)）
+- requestId 已在途时回 `invalid-request`，否则登记在途并异步执行（[packages/experimental/inspector/src/worker/inspection/query-router.ts:156-162](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L156-L162)）
+- `close` 幂等地清空准入与在途状态并从路由器注销（[packages/experimental/inspector/src/worker/inspection/query-router.ts:166-172](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L166-L172)）
+- `execute` 执行查询后先过 `canReply` 门，成功响应超过帧上限时改回 `result-too-large`，抛错时回 `internal-error`，finally 中清理在途登记（[packages/experimental/inspector/src/worker/inspection/query-router.ts:174-196](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L174-L196)）
+- `rejectMalformed` 先尝试从原值抽出帧身份以定向回错，抽不出则以 1008 关闭载体（[packages/experimental/inspector/src/worker/inspection/query-router.ts:198-205](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L198-L205)）
+- `sendFailure` 构造带协议版本的错误响应帧，连错误帧都超限时以 1009 关闭载体（[packages/experimental/inspector/src/worker/inspection/query-router.ts:207-226](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L207-L226)）
+- `canReply` 要求未关闭、准入对象未换、注册仍有效且该 requestId 仍绑定同一准入，才允许回送（[packages/experimental/inspector/src/worker/inspection/query-router.ts:228-233](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L228-L233)）
+- `deliver` 在发送抛错时以 1011 关闭载体（[packages/experimental/inspector/src/worker/inspection/query-router.ts:235-241](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L235-L241)）
+- `rejectTransport` 先关闭 peer 再关载体，并把关闭原因截断到 123 字节（[packages/experimental/inspector/src/worker/inspection/query-router.ts:243-250](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/query-router.ts#L243-L250)）
+
+### packages/experimental/inspector/src/worker/inspection/realm-store.ts
+
+Worker 侧 Host 与 Client realm 的权威注册表，随 Client 目标的接入与断开增删 realm，并广播给每个 DevTools 连接。
+
+- 构造时为已有的每个 Client 目标建 realm，并订阅目标路由器的后续变化（[packages/experimental/inspector/src/worker/inspection/realm-store.ts:20-27](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/realm-store.ts#L20-L27)）
+- `realms` 固定以 Host 在前、Client 按插入顺序在后的次序返回（[packages/experimental/inspector/src/worker/inspection/realm-store.ts:33-35](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/realm-store.ts#L33-L35)）
+- `byContextId` 只在 Client realm 的合成上下文中按数字 id 查找（[packages/experimental/inspector/src/worker/inspection/realm-store.ts:42-47](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/realm-store.ts#L42-L47)）
+- `byUniqueContextId` 只在 Client realm 的合成上下文中按唯一 id 查找（[packages/experimental/inspector/src/worker/inspection/realm-store.ts:54-59](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/realm-store.ts#L54-L59)）
+- `bySource` 对 host 源直接返回 Host realm，对 client 源要求 generation 一致才返回（[packages/experimental/inspector/src/worker/inspection/realm-store.ts:66-70](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/realm-store.ts#L66-L70)）
+- `subscribe` 注册 realm 增删观察者并返回移除它的 disposer（[packages/experimental/inspector/src/worker/inspection/realm-store.ts:77-80](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/realm-store.ts#L77-L80)）
+- `close` 取消目标订阅并清空 Client realm 表与监听者（[packages/experimental/inspector/src/worker/inspection/realm-store.ts:83-87](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/realm-store.ts#L83-L87)）
+- `receiveClient` 在关闭事件里要求 realm 仍绑定同一 target 才删除并广播，避免误删重连后的新 realm（[packages/experimental/inspector/src/worker/inspection/realm-store.ts:89-99](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/realm-store.ts#L89-L99)）
+- `openClient` 用目标、Runtime 路由器与源路由器构造 Client realm 并按 sourceId 入表（[packages/experimental/inspector/src/worker/inspection/realm-store.ts:101-105](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/realm-store.ts#L101-L105)）
+- `emit` 逐个通知监听者副本并吞掉单个连接的抛出（[packages/experimental/inspector/src/worker/inspection/realm-store.ts:107-115](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/inspection/realm-store.ts#L107-L115)）
+
+### packages/experimental/inspector/src/worker/inspection/realm.ts
+
+realm 描述、执行上下文归属、能力槽与会话接口的类型定义文件，被 Host/Client realm 实现与注册表引用。
+
+- 无运行期机制
+
+### packages/experimental/inspector/src/worker/realms/client/bridge.ts
+
+把一个 Client 源代与能寻址它的 Worker 桥接服务打包成不可变记录的小工具，被 Client realm 构造函数使用。
+
+- 无运行期机制
+
+### packages/experimental/inspector/src/worker/realms/client/console.ts
+
+Client realm 的 ConsoleBackend 实现，把会话局部的 Client Console 事件转换成 realm 中立的 Runtime 值。
+
+- `subscribe` 经路由器建立会话级 Console 订阅，并在回调中把 Client 事件与脚本键映射成通用 Console 事件（[packages/experimental/inspector/src/worker/realms/client/console.ts:22-31](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/console.ts#L22-L31)）
+- 返回的 disposer 先从集合中摘除自身、摘除失败即不重复调用底层 disposer（[packages/experimental/inspector/src/worker/realms/client/console.ts:27-30](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/console.ts#L27-L30)）
+- `clear` 为空实现，Client 侧不清空控制台条目（[packages/experimental/inspector/src/worker/realms/client/console.ts:33](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/console.ts#L33)）
+- `close` 释放本连接的全部 Console 订阅（[packages/experimental/inspector/src/worker/realms/client/console.ts:35-39](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/console.ts#L35-L39)）
+
+### packages/experimental/inspector/src/worker/realms/client/debugger.ts
+
+声明 Client realm 不提供调试后端的单函数模块，被 Client realm 的每个会话使用。
+
+- 返回 state 为 `unsupported`、理由为"Client native debugging is unavailable"的能力槽，使 Debugger 操作在 Client realm 上以该文本失败（[packages/experimental/inspector/src/worker/realms/client/debugger.ts:9-11](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/debugger.ts#L9-L11)）
+
+### packages/experimental/inspector/src/worker/realms/client/index.ts
+
+Client realm 定义，按目标声明的能力装配 Runtime、Console、Sources 后端，并为每个 DevTools 连接开一套隔离会话。
+
+- 固定列出 Client realm 支持的七个 Runtime 操作名（[packages/experimental/inspector/src/worker/realms/client/index.ts:15-23](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/index.ts#L15-L23)）
+- 构造时分配随机 realmId，并从目标源继承 sourceId、generation 与 label（[packages/experimental/inspector/src/worker/realms/client/index.ts:38-45](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/index.ts#L38-L45)）
+- 上下文固定为合成类型，其 id、uniqueId、origin 取自目标（[packages/experimental/inspector/src/worker/realms/client/index.ts:46-51](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/index.ts#L46-L51)）
+- 按目标是否声明 `client-console` / `client-sources` 能力决定对外公布的 console 与 sources 操作集，debugger 一律为空（[packages/experimental/inspector/src/worker/realms/client/index.ts:53-58](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/index.ts#L53-L58)）
+- `openSession` 为每个连接分配新的 Runtime 会话 id 与 Source 会话 id，并按能力条件构造对应后端（[packages/experimental/inspector/src/worker/realms/client/index.ts:67-80](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/index.ts#L67-L80)）
+- 缺失能力时以带具体理由的 unsupported 槽返回，原生域一律标为"Client realm has no native CDP transport"（[packages/experimental/inspector/src/worker/realms/client/index.ts:85-92](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/index.ts#L85-L92)）
+- 会话 `close` 按 console、sources、runtime 的顺序释放后端（[packages/experimental/inspector/src/worker/realms/client/index.ts:93-97](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/index.ts#L93-L97)）
+- `supports` 在源能力列表中按 type 判定某项能力是否存在（[packages/experimental/inspector/src/worker/realms/client/index.ts:102-104](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/index.ts#L102-L104)）
+
+### packages/experimental/inspector/src/worker/realms/client/runtime.ts
+
+Client realm 的 RuntimeBackend 实现，把通用 Runtime 请求翻译成 Client 线路命令并把结果转回中立值。
+
+- `enable` 为空操作，`disable` 关闭该连接在目标上的 Runtime 会话（[packages/experimental/inspector/src/worker/realms/client/runtime.ts:33-40](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/runtime.ts#L33-L40)）
+- `evaluate` 先做选项断言，再剔除 context、throwOnSideEffect、serializationOptions 三个字段后发出 `evaluate` 命令（[packages/experimental/inspector/src/worker/realms/client/runtime.ts:42-54](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/runtime.ts#L42-L54)）
+- `getProperties` 把句柄改写成 Client 线路句柄，并把属性、内部属性与异常详情逐一转成中立值（[packages/experimental/inspector/src/worker/realms/client/runtime.ts:56-76](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/runtime.ts#L56-L76)）
+- `callFunction` 断言选项后剔除不支持字段，并把接收者与每个对象实参改写成 Client 句柄（[packages/experimental/inspector/src/worker/realms/client/runtime.ts:78-98](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/runtime.ts#L78-L98)）
+- `awaitPromise` 把 promise 句柄改写为 Client 句柄后发出命令并转换完成结果（[packages/experimental/inspector/src/worker/realms/client/runtime.ts:100-109](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/runtime.ts#L100-L109)）
+- `globalLexicalScopeNames` 在传入原生执行上下文时抛错（[packages/experimental/inspector/src/worker/realms/client/runtime.ts:111-114](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/runtime.ts#L111-L114)）
+- `releaseObject` 与 `releaseObjectGroup` 分别发出对应的 Client 释放命令（[packages/experimental/inspector/src/worker/realms/client/runtime.ts:116-122](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/runtime.ts#L116-L122)）
+- `close` 幂等地置关闭标志并关闭目标会话（[packages/experimental/inspector/src/worker/realms/client/runtime.ts:125-129](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/runtime.ts#L125-L129)）
+- `request` 在已关闭时直接以"Client realm session is closed"拒绝，不再发出线路请求（[packages/experimental/inspector/src/worker/realms/client/runtime.ts:131-134](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/runtime.ts#L131-L134)）
+- `expectResult` 在返回的 op 与请求 op 不符时抛错（[packages/experimental/inspector/src/worker/realms/client/runtime.ts:141-147](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/runtime.ts#L141-L147)）
+- `assertClientEvaluationOptions` 逐项拒绝原生上下文、throwOnSideEffect、serializationOptions、disableBreaks、绕过 CSP，并要求 timeout 仅在 awaitPromise 时可用（[packages/experimental/inspector/src/worker/realms/client/runtime.ts:149-160](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/runtime.ts#L149-L160)）
+- `assertClientCallOptions` 拒绝原生上下文、throwOnSideEffect、serializationOptions 与 userGesture（[packages/experimental/inspector/src/worker/realms/client/runtime.ts:162-167](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/runtime.ts#L162-L167)）
+
+### packages/experimental/inspector/src/worker/realms/client/scripts.ts
+
+在一个 Client realm 内为脚本分配稳定公开键的映射表，被该 realm 的 Runtime、Console、Sources 后端共用。
+
+- `toRuntime` 对首次见到的 Client 本地键分配形如 `client:<上下文绝对值>:<序号>` 的公开脚本键并缓存，重复查询返回同一键（[packages/experimental/inspector/src/worker/realms/client/scripts.ts:17-26](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/scripts.ts#L17-L26)）
+
+### packages/experimental/inspector/src/worker/realms/client/sources.ts
+
+Client realm 的只读源码后端，通过分块传输协议取回脚本目录、源码与 source map。
+
+- `listScripts` 在会话已关闭时抛错，否则把目录加载 Promise 记忆化，只请求一次（[packages/experimental/inspector/src/worker/realms/client/sources.ts:29-33](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/sources.ts#L29-L33)）
+- `getScriptSource` 在内容不可用时抛"Client script source is unavailable"（[packages/experimental/inspector/src/worker/realms/client/sources.ts:35-40](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/sources.ts#L35-L40)）
+- `getSourceMap` 在内容不可用时返回 undefined 而非抛错（[packages/experimental/inspector/src/worker/realms/client/sources.ts:42-45](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/sources.ts#L42-L45)）
+- `subscribe` 返回空 disposer，不推送新发现的脚本（[packages/experimental/inspector/src/worker/realms/client/sources.ts:47-49](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/sources.ts#L47-L49)）
+- `close` 幂等地关闭源会话并清空脚本路由表（[packages/experimental/inspector/src/worker/realms/client/sources.ts:52-57](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/sources.ts#L52-L57)）
+- `register` 把 Client 本地脚本键换成 realm 公开键，并给描述符补上该目标的 executionContextId（[packages/experimental/inspector/src/worker/realms/client/sources.ts:68-77](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/sources.ts#L68-L77)）
+- `route` 先确保目录已加载，再对未知脚本键抛"Client script is no longer available"（[packages/experimental/inspector/src/worker/realms/client/sources.ts:79-84](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/sources.ts#L79-L84)）
+- `read` 按 `chunkBytes` 循环拉取内容块，并对超块长、nextOffset 不连续、非 eof 却零推进、超过 `maxContentBytes` 四种情况抛错终止（[packages/experimental/inspector/src/worker/realms/client/sources.ts:86-111](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/sources.ts#L86-L111)）
+- 拼接后的字节用 fatal 模式的 UTF-8 解码，非法编码即抛错（[packages/experimental/inspector/src/worker/realms/client/sources.ts:112](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/sources.ts#L112)）
+- `expectResult` 在返回的 op 与请求 op 不符时抛错（[packages/experimental/inspector/src/worker/realms/client/sources.ts:116-122](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/sources.ts#L116-L122)）
+
+### packages/experimental/inspector/src/worker/realms/client/values.ts
+
+把 Client 线路上的 Runtime 值、属性、异常、Console 事件与栈帧转换成 realm 中立表示的纯函数集合，被 Client 的 Runtime 与 Console 后端调用。
+
+- `clientCompletion` 转换结果对象并在存在时附上转换后的异常详情（[packages/experimental/inspector/src/worker/realms/client/values.ts:33-43](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/values.ts#L33-L43)）
+- `clientProperty` 分别转换 value、get、set、symbol 四个可选对象槽，缺省者不出现在结果中（[packages/experimental/inspector/src/worker/realms/client/values.ts:50-61](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/values.ts#L50-L61)）
+- `clientInternalProperty` 只保留 name 与可选 value（[packages/experimental/inspector/src/worker/realms/client/values.ts:68-75](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/values.ts#L68-L75)）
+- `clientException` 转换栈轨迹与异常对象后并入其余字段（[packages/experimental/inspector/src/worker/realms/client/values.ts:83-93](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/values.ts#L83-L93)）
+- `clientConsoleEvent` 对 `console-api` 事件逐个转换实参与栈轨迹，对异常事件转换其详情（[packages/experimental/inspector/src/worker/realms/client/values.ts:101-121](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/values.ts#L101-L121)）
+- `clientRemoteObject` 保留描述符，把 Client 句柄改写为后端句柄槽，并透传可选的语义引用（[packages/experimental/inspector/src/worker/realms/client/values.ts:128-138](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/values.ts#L128-L138)）
+- `clientHandle` 与 `backendHandle` 把同一段文本在两种句柄角色间改换品牌并经 `inspectorId` 校验（[packages/experimental/inspector/src/worker/realms/client/values.ts:145-151](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/values.ts#L145-L151)）
+- `clientStackTrace` 对每个调用帧映射脚本键，并递归转换 parent 链（[packages/experimental/inspector/src/worker/realms/client/values.ts:153-162](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/client/values.ts#L153-L162)）
+
+### packages/experimental/inspector/src/worker/realms/host/bridge.ts
+
+每个 DevTools 连接到主线程真实 V8 inspector 目标的载体，另含把原生通知串行投影给多个消费者的通道类。
+
+- 构造时挂上 `inspectorNotification` 监听，先改写上下文名再逐个派发给订阅者，并吞掉单个订阅者的抛出（[packages/experimental/inspector/src/worker/realms/host/bridge.ts:28-38](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/bridge.ts#L28-L38)）
+- `subscribe` 注册原生通知消费者并返回移除它的 disposer（[packages/experimental/inspector/src/worker/realms/host/bridge.ts:45-48](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/bridge.ts#L45-L48)）
+- `request` 在首次调用时才连接主线程，连接失败则以缓存的失败理由拒绝，并把 post 的同步抛出也转成拒绝（[packages/experimental/inspector/src/worker/realms/host/bridge.ts:56-69](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/bridge.ts#L56-L69)）
+- `close` 清空订阅者，仅在已连接且无失败时断开底层会话并吞掉重复断开的抛出（[packages/experimental/inspector/src/worker/realms/host/bridge.ts:72-81](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/bridge.ts#L72-L81)）
+- `connect` 只尝试一次 `connectToMainThread`，失败时把理由记为"Host V8 inspector is unavailable: …"（[packages/experimental/inspector/src/worker/realms/host/bridge.ts:83-92](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/bridge.ts#L83-L92)）
+- `rewriteContextName` 只对 `isDefault` 为真的 `Runtime.executionContextCreated` 通知把上下文 name 换成构造时传入的标签（[packages/experimental/inspector/src/worker/realms/host/bridge.ts:94-111](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/bridge.ts#L94-L111)）
+- `HostNotificationChannel` 构造时按 accept 谓词过滤原生通知（[packages/experimental/inspector/src/worker/realms/host/bridge.ts:120-126](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/bridge.ts#L120-L126)）
+- 通道的 `close` 取消原生订阅并清空自身消费者（[packages/experimental/inspector/src/worker/realms/host/bridge.ts:139-142](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/bridge.ts#L139-L142)）
+- 通道的 `receive` 把投影串在一条 Promise 链上以保序，投影返回 undefined 则丢弃，投影抛出被 catch 吞掉不影响请求处理（[packages/experimental/inspector/src/worker/realms/host/bridge.ts:144-159](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/bridge.ts#L144-L159)）
+
+### packages/experimental/inspector/src/worker/realms/host/console.ts
+
+Host realm 的 ConsoleBackend，把原生 `Runtime.consoleAPICalled` 与 `Runtime.exceptionThrown` 通知转成 realm 中立 Console 事件。
+
+- 用固定的 18 项类型集合限定被接受的 console 调用类型（[packages/experimental/inspector/src/worker/realms/host/console.ts:14-17](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/console.ts#L14-L17)）
+- 构造时建立只接受 `Runtime.consoleAPICalled` 与 `Runtime.exceptionThrown` 的通知通道并分别投影（[packages/experimental/inspector/src/worker/realms/host/console.ts:27-33](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/console.ts#L27-L33)）
+- `clear` 向原生会话发出 `Runtime.discardConsoleEntries`（[packages/experimental/inspector/src/worker/realms/host/console.ts:45-47](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/console.ts#L45-L47)）
+- `close` 关闭通知通道（[packages/experimental/inspector/src/worker/realms/host/console.ts:50-52](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/console.ts#L50-L52)）
+- `consoleEvent` 在类型不在集合内、args 非数组或 timestamp 非数字时返回 undefined 丢弃该通知（[packages/experimental/inspector/src/worker/realms/host/console.ts:54-61](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/console.ts#L54-L61)）
+- `consoleEvent` 并发把每个实参转成 RemoteObject，并按存在与否补上 contextId 与转换后的栈轨迹（[packages/experimental/inspector/src/worker/realms/host/console.ts:62-71](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/console.ts#L62-L71)）
+- `exceptionEvent` 在 timestamp 非数字或缺 exceptionDetails 时丢弃，否则转换异常详情并附上可选 contextId（[packages/experimental/inspector/src/worker/realms/host/console.ts:74-89](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/console.ts#L74-L89)）
+
+### packages/experimental/inspector/src/worker/realms/host/debugger.ts
+
+Host realm 的 DebuggerBackend，把通用调试命令转发到原生 inspector 会话，并把 paused/resumed/breakpointResolved 通知转成中立事件。
+
+- 构造时建立只接受 `Debugger.resumed`、`Debugger.breakpointResolved`、`Debugger.paused` 三种通知的通道并分别投影（[packages/experimental/inspector/src/worker/realms/host/debugger.ts:26-36](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/debugger.ts#L26-L36)）
+- `enable` 只在给定时传 `maxScriptsCacheSize`（[packages/experimental/inspector/src/worker/realms/host/debugger.ts:39-43](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/debugger.ts#L39-L43)）
+- `disable` 与 `pause` 直接转发对应原生方法（[packages/experimental/inspector/src/worker/realms/host/debugger.ts:45-51](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/debugger.ts#L45-L51)）
+- `resume` 只在给定时传 `terminateOnResume`（[packages/experimental/inspector/src/worker/realms/host/debugger.ts:53-57](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/debugger.ts#L53-L57)）
+- `evaluateOnCallFrame` 逐项映射可选选项、把 `timeoutMs` 改名为原生 `timeout`，并把结果经 Runtime 后端转成中立完成结果（[packages/experimental/inspector/src/worker/realms/host/debugger.ts:59-73](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/debugger.ts#L59-L73)）
+- `close` 关闭通知通道（[packages/experimental/inspector/src/worker/realms/host/debugger.ts:80-82](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/debugger.ts#L80-L82)）
+- `paused` 在 callFrames 非数组或 reason 非字符串时丢弃该通知，否则并发转换全部调用帧并按需带上 data、hitBreakpoints、asyncStackTrace（[packages/experimental/inspector/src/worker/realms/host/debugger.ts:84-103](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/debugger.ts#L84-L103)）
+- `callFrame` 校验 callFrameId、functionName、url 与 scopeChain 后转换作用域链、this 与返回值（[packages/experimental/inspector/src/worker/realms/host/debugger.ts:105-123](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/debugger.ts#L105-L123)）
+- `scope` 校验 type 后转换其对象并按需带上 name 与起止位置（[packages/experimental/inspector/src/worker/realms/host/debugger.ts:125-135](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/debugger.ts#L125-L135)）
+- `breakpointResolved` 在缺 breakpointId 或 location 时丢弃该通知（[packages/experimental/inspector/src/worker/realms/host/debugger.ts:139-148](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/debugger.ts#L139-L148)）
+- `location` 要求 scriptId 为字符串、lineNumber 为安全整数、columnNumber 若存在也须为安全整数，并把 scriptId 转为脚本键（[packages/experimental/inspector/src/worker/realms/host/debugger.ts:150-163](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/debugger.ts#L150-L163)）
+
+### packages/experimental/inspector/src/worker/realms/host/index.ts
+
+Host realm 定义，为每个 DevTools 连接开一条独立的原生 V8 inspector 会话并装配四类后端。
+
+- 固定公布 Host realm 的 Runtime、console、sources、debugger 四组能力清单（[packages/experimental/inspector/src/worker/realms/host/index.ts:12-31](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/index.ts#L12-L31)）
+- 上下文固定为原生类型（[packages/experimental/inspector/src/worker/realms/host/index.ts:25](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/index.ts#L25)）
+- 构造时把 sourceId 固定为 `host-runtime`，realmId 与 generation 各取一个随机 UUID（[packages/experimental/inspector/src/worker/realms/host/index.ts:33-41](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/index.ts#L33-L41)）
+- `openSession` 新建原生会话并在其上装配 Runtime、Console、Sources、Debugger 后端，原生域后端即该会话本身（[packages/experimental/inspector/src/worker/realms/host/index.ts:44-57](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/index.ts#L44-L57)）
+- 会话 `close` 按 sources、debugger、console、runtime、原生会话的顺序释放（[packages/experimental/inspector/src/worker/realms/host/index.ts:58-64](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/index.ts#L58-L64)）
+
+### packages/experimental/inspector/src/worker/realms/host/runtime.ts
+
+Host realm 的 RuntimeBackend，把通用 Runtime 请求转成原生 CDP 调用，并把原生返回值校验、规范化为中立模型，同时为对象附加 Cordis 语义引用。
+
+- 构造时订阅原生通知以跟踪默认执行上下文（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:31-33](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L31-L33)）
+- `enable` 与 `disable` 转发原生方法，`disable` 后清掉缓存的默认上下文 id（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:35-42](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L35-L42)）
+- `evaluate` 逐项映射十余个可选选项并把 `timeoutMs` 改名为原生 `timeout`（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:44-62](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L44-L62)）
+- `getProperties` 把通用 handle 映射到原生 objectId 并转换返回的属性集合（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:64-73](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L64-L73)）
+- `callFunction` 无接收者时回落到缓存的默认执行上下文，仍取不到则抛"Host Runtime default execution context is unavailable"（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:75-85](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L75-L85)）
+- `awaitPromise` 把通用 promise 句柄映射为原生 `promiseObjectId`（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:98-104](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L98-L104)）
+- `globalLexicalScopeNames` 在返回值不是全字符串数组时抛错（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:106-114](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L106-L114)）
+- `releaseObject` 与 `releaseObjectGroup` 转发对应原生释放方法（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:116-122](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L116-L122)）
+- `close` 取消原生上下文观察订阅（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:125-127](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L125-L127)）
+- `completion` 转换结果对象并按需附上异常详情（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:134-141](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L134-L141)）
+- `properties` 在 result 非数组时抛错，并按需转换 internal/private 属性与异常详情（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:143-157](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L143-L157)）
+- `property` 要求 name 为字符串、configurable 与 enumerable 为布尔，并转换 value/get/set/symbol 四个对象槽（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:159-176](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L159-L176)）
+- `internalProperties` 与 `privateProperties` 各自校验数组与 name 字段并转换其对象槽（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:178-202](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L178-L202)）
+- `exceptionDetails` 要求 text 为字符串、行列号为安全整数，并转换栈轨迹与异常对象（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:209-224](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L209-L224)）
+- `remoteObject` 从描述符中删掉 `objectId`、要求剩余部分是 JSON 值，并对有句柄的对象追加语义引用（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:231-244](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L231-L244)）
+- `stackTrace` 逐帧校验 functionName、url 与行列号，把 scriptId 转成脚本键，并递归处理 parent（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:251-276](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L251-L276)）
+- `observeContext` 在 `isDefault` 的上下文创建通知里记住默认上下文 id，在其销毁通知里清除（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:278-289](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L278-L289)）
+- `identifyObject` 以 silent、returnByValue 的方式在目标对象上调用固定的识别函数取回语义引用，抛异常或有 exceptionDetails 时返回 undefined 而不影响原值（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:291-307](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L291-L307)）
+- `nativeContext` 按上下文种类生成数字上下文字段或 `uniqueContextId` 字段（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:314-320](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L314-L320)）
+- `toNativeArgument` 把四种调用实参分别映射为 value、unserializableValue、objectId 或空对象，未知种类走 `assertNever` 抛错（[packages/experimental/inspector/src/worker/realms/host/runtime.ts:322-338](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/runtime.ts#L322-L338)）
+
+### packages/experimental/inspector/src/worker/realms/host/scripts.ts
+
+把 Node 原生 inspector 脚本 id 转成 realm 后端脚本键的单函数模块，被 Host 的 sources、debugger、runtime 共用。
+
+- `hostScriptKey` 经 `inspectorId` 校验后把原生 scriptId 直接品牌为脚本键（[packages/experimental/inspector/src/worker/realms/host/scripts.ts:11-13](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/scripts.ts#L11-L13)）
+
+### packages/experimental/inspector/src/worker/realms/host/sources.ts
+
+Host realm 的 SourceBackend，从原生 `Debugger.scriptParsed` 通知维护连接局部脚本目录，并按需取回源码。
+
+- 构造时订阅原生通知以接收脚本解析事件（[packages/experimental/inspector/src/worker/realms/host/sources.ts:20-24](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/sources.ts#L20-L24)）
+- `listScripts` 返回当前已缓存目录的描述符快照（[packages/experimental/inspector/src/worker/realms/host/sources.ts:26-28](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/sources.ts#L26-L28)）
+- `getScriptSource` 对未知脚本键抛错，并在原生返回值缺 `scriptSource` 时抛错（[packages/experimental/inspector/src/worker/realms/host/sources.ts:30-36](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/sources.ts#L30-L36)）
+- `getSourceMap` 一律返回 undefined（[packages/experimental/inspector/src/worker/realms/host/sources.ts:38-40](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/sources.ts#L38-L40)）
+- `subscribe` 注册新脚本消费者并返回移除它的 disposer（[packages/experimental/inspector/src/worker/realms/host/sources.ts:47-50](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/sources.ts#L47-L50)）
+- `close` 取消原生订阅并清空目录与消费者（[packages/experimental/inspector/src/worker/realms/host/sources.ts:53-57](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/sources.ts#L53-L57)）
+- `receive` 只处理 `Debugger.scriptParsed`，且在 scriptId、url 与四个起止行列号任一不合法时整条丢弃（[packages/experimental/inspector/src/worker/realms/host/sources.ts:59-68](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/sources.ts#L59-L68)）
+- 构造脚本描述符时把缺失的 hash 补为空串，并按存在与否带上 buildId、非空 sourceMapURL、executionContextId、isModule、length（[packages/experimental/inspector/src/worker/realms/host/sources.ts:69-86](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/sources.ts#L69-L86)）
+- 入表后逐个通知消费者并吞掉单个消费者的抛出（[packages/experimental/inspector/src/worker/realms/host/sources.ts:87-93](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/sources.ts#L87-L93)）
+- `isInteger` 要求安全整数且非负（[packages/experimental/inspector/src/worker/realms/host/sources.ts:97-99](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/sources.ts#L97-L99)）
+
+### packages/experimental/inspector/src/worker/realms/host/values.ts
+
+针对 Node 原生 Inspector 协议返回值的小型校验与字段拼装工具，被 Host 的 runtime、console、debugger 后端共用。
+
+- `isNativeRecord` 判定值为非数组的对象记录（[packages/experimental/inspector/src/worker/realms/host/values.ts:8-10](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/values.ts#L8-L10)）
+- `requireNativeRecord` 在不是对象记录时以带标签的消息抛错（[packages/experimental/inspector/src/worker/realms/host/values.ts:18-21](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/values.ts#L18-L21)）
+- `optionalNativeField` 在值为 undefined 时产出空记录，从而让该字段完全不出现在原生请求里（[packages/experimental/inspector/src/worker/realms/host/values.ts:29-34](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/realms/host/values.ts#L29-L34)）
+
+### packages/experimental/inspector/src/worker/server.ts
+
+Inspector Worker 的整体装配点：按配置构造各仓库、路由器、realm 注册表与端点，接上 Host 源端口，并提供一次性关停。
+
+- 用配置中的 `maxRetainedRequests` 与 `maxJournalBytes` 构造网络仓库（[packages/experimental/inspector/src/worker/server.ts:31-35](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/server.ts#L31-L35)）
+- 用 `maxCordisNodes` 与 `maxDisconnectedCordisTrees` 构造 Cordis 树仓库（[packages/experimental/inspector/src/worker/server.ts:36-39](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/server.ts#L36-L39)）
+- 源注册表以这两个仓库为记录消费者，并带上单帧字节上限与单帧记录数上限（[packages/experimental/inspector/src/worker/server.ts:40-44](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/server.ts#L40-L44)）
+- Client Runtime 与 Source 路由器各自带上请求超时、Client 源码字节上限与帧字节上限（[packages/experimental/inspector/src/worker/server.ts:45-51](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/server.ts#L45-L51)）
+- realm 注册表以标签为 `Host` 的 Host realm 为固定成员，Client realm 由路由器动态提供（[packages/experimental/inspector/src/worker/server.ts:52](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/server.ts#L52)）
+- 语义读取器每次读取都从 Cordis 仓库现取树，查询路由器以帧字节上限为界（[packages/experimental/inspector/src/worker/server.ts:53-55](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/server.ts#L53-L55)）
+- 订阅源注册表事件，在源关闭时撤销该源代的查询访问权（[packages/experimental/inspector/src/worker/server.ts:56-58](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/server.ts#L56-L58)）
+- Host 查询 peer 的发送与关闭都直接作用在 Host 源 MessagePort 上（[packages/experimental/inspector/src/worker/server.ts:59-62](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/server.ts#L59-L62)）
+- Host 源连接在发出 `source/accepted` 帧的同时把该源代准入给 Host 查询 peer（[packages/experimental/inspector/src/worker/server.ts:63-70](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/server.ts#L63-L70)）
+- Host 端口上的每条消息先给查询 peer 认领，未被认领才交源注册表摄入（[packages/experimental/inspector/src/worker/server.ts:71-73](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/server.ts#L71-L73)）
+- Host 端口关闭时关掉查询 peer 并以"Host source disconnected"断开该源（[packages/experimental/inspector/src/worker/server.ts:74-78](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/server.ts#L74-L78)）
+- 端点持有配置、源注册表、Network 域、realm 注册表、DOM 后端、读取器与查询路由器，启动后返回监听信息（[packages/experimental/inspector/src/worker/server.ts:80-89](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/server.ts#L80-L89)）
+- `close` 用共享 Promise 保证只执行一次，并按端点、网络、Cordis DOM、realm、两个 Client 路由器、Host 查询 peer、源注册表、事件订阅、查询路由器、Host 端口的固定顺序拆解（[packages/experimental/inspector/src/worker/server.ts:90-110](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/src/worker/server.ts#L90-L110)）
+
+### packages/experimental/inspector/tsconfig.json
+
+该包的 TypeScript 求解方案根配置，仅引用 Host 与 Client 两个面向的叶子配置。
+
+- 无运行期机制
+
+### packages/experimental/inspector/tsdown.config.ts
+
+该包的打包配置，决定发布产物中存在哪些入口以及哪些依赖保持外置。
+
+- Worker 产物以 `lib/types/worker/entry.js` 为入口打成 `lib/worker`，格式 esm、平台 node、目标 es2024，并内联动态导入（[packages/experimental/inspector/tsdown.config.ts:4-13](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/tsdown.config.ts#L4-L13)）
+- `ws` 被排除在打包之外，运行期从外部解析（[packages/experimental/inspector/tsdown.config.ts:14](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/tsdown.config.ts#L14)）
+- 默认导出在 Host 阶段构建插件入口与 invariant 入口并附带 Worker 产物，在 Client 阶段构建动态 Client 插件（[packages/experimental/inspector/tsdown.config.ts:18-22](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/experimental/inspector/tsdown.config.ts#L18-L22)）
