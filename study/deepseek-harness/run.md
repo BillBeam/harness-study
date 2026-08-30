@@ -88,7 +88,9 @@ DSH_API_KEY_VAR=XAI_API_KEY DSH_PROVIDER=xai DSH_MODEL=grok-4.3 scripts/run_dsh.
 
 **放在哪**：根目录默认是 `$DSH_HOME/sessions`（`packages/bundle/base/cordis.patch.yml:110-113`），`$DSH_HOME` 默认 `~/.dsh`。脚本把它指到 `.dsh-run/<变体>/home`，所以每个变体的会话是干净的一份。根目录之下的布局是 `<root>/--<归一化 cwd>--/<会话 id>/session.jsonl`。
 
-**一次跑产生几个文件**：会话日志**一个**——一次运行一个会话，一个会话一个文件。同一次运行在 `$DSH_HOME` 下另外还会写一个投影缓存文件 `storages/session_projcache/sessions/<会话 id>.json`；`$DSH_HOME/profiles/headless/` 下那四个文件（`cordis.yml`、`cordis.patch.yml`、`package.json`、`pnpm-workspace.yaml`）是 profile 的骨架，第一次启动时建好，之后每次运行只重写 `cordis.yml`，不随运行增加。留进本仓库的是会话日志本身加脚本自己 tee 的终端全文。
+**一次跑产生几个文件**：会话日志**一个会话一个**，没有索引也没有清单文件；本仓库这两次运行各只有一个会话，所以各是一个 `session.jsonl`。不是恒等于一：一次运行里派出的每个子 agent 各带一份自己的 `SessionHeader`（`parentSession`、`origin: subagent`、`delegationDepth`）落进**同一个**项目目录（`packages/subagent/subagent/src/child-agent.ts:144-155`），N 个会话就是 N 个文件——`default` 那次的工具表里就有 `subagent` 与 `subagent_fork`，只是这次没派。文件是惰性建的：只记录意图、第一次 append 才落盘（`packages/session/session-persistence/src/coordinator.ts:680-681`）。
+
+同一次运行在 `$DSH_HOME` 下另外还会写一个投影缓存文件 `storages/session_projcache/sessions/<会话 id>.json`；`$DSH_HOME/profiles/headless/` 下那四个文件（`cordis.yml`、`cordis.patch.yml`、`package.json`、`pnpm-workspace.yaml`）是 profile 的骨架，第一次启动时建好，之后每次运行只重写 `cordis.yml`，不随运行增加。留进本仓库的是会话日志本身加脚本自己 tee 的终端全文。
 
 ## 两次运行留下了什么
 
