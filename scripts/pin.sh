@@ -24,8 +24,8 @@ info() { printf '%s\n' "$*" >&2; }
 
 # Emit "name<TAB>url<TAB>commit<TAB>note" for each pin, optionally filtered by name.
 read_pins() {
-  local want=("$@")
-  awk -v FS='\t' -v OFS='\t' '
+  local want=("$@") records rc=0 name url commit note w
+  records="$(awk -v FS='\t' -v OFS='\t' '
     /^[[:space:]]*(#|$)/ { next }
     {
       if (NF < 3) { printf("pin: malformed record on line %d of %s\n", NR, FILENAME) > "/dev/stderr"; bad=1; next }
@@ -33,12 +33,26 @@ read_pins() {
       print $1, $2, $3, ($4 == "" ? "-" : $4)
     }
     END { if (bad) exit 1 }
-  ' "$PINS" | {
-    if [ ${#want[@]} -eq 0 ]; then cat; else
-      local re; re="^($(IFS='|'; echo "${want[*]}"))	"
-      grep -E "$re" || true
-    fi
-  }
+  ' "$PINS")" || rc=1
+  if [ ${#want[@]} -eq 0 ]; then
+    if [ -n "$records" ]; then printf '%s\n' "$records"; fi
+    return $rc
+  fi
+  # Filtering compares the name field literally, one wanted name at a time. It
+  # used to join the names into an alternation regex and grep for it, but a pin
+  # name may legally contain '.', which is a regex metacharacter -- so
+  # `pin.sh sync mini.swe.agent` matched the pin `mini-swe-agent` and acted on a
+  # pin nobody named. A typo is meant to report "no pins matched", not to pick a
+  # neighbour. selftest.sh asserts both directions.
+  while IFS=$'\t' read -r name url commit note; do
+    [ -n "$name" ] || continue
+    for w in "${want[@]}"; do
+      [ "$name" = "$w" ] || continue
+      printf '%s\t%s\t%s\t%s\n' "$name" "$url" "$commit" "$note"
+      break
+    done
+  done <<< "$records"
+  return $rc
 }
 
 pin_field() { # pin_field <name> <1|2|3|4>

@@ -5,7 +5,7 @@
 
 PYTHON ?= python3
 
-.PHONY: help check check-v selftest sync status
+.PHONY: help check check-v selftest sync status run
 
 help:  ## show this help
 	@grep -hE '^[a-z-]+:.*?##' $(MAKEFILE_LIST) | sort | \
@@ -19,6 +19,9 @@ check-v:  ## same, listing every anchor found
 
 selftest:  ## prove the checker itself still detects each failure mode
 	@scripts/selftest.sh
+
+run:  ## run mini-swe-agent on the fixed task, writing study/mini-swe-agent/trace/
+	@scripts/run_mini.sh
 
 sync:  ## materialise every pinned repository at its pinned commit
 	@scripts/pin.sh sync

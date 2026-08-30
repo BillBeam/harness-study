@@ -3,6 +3,8 @@ title: how a harness decides a run is over
 status: seeded
 ---
 
+执行位示范，先写自己的走查再打开对照，不作论断依据
+
 > 中文：[001-control-flow-via-exceptions.zh-CN.md](001-control-flow-via-exceptions.zh-CN.md)
 
 # Control flow: how a run ends

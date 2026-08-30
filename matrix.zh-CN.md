@@ -6,7 +6,7 @@
 
 | 技术点 | mini-swe-agent |
 | --- | --- |
-| [001 · 控制流：一次运行怎么结束](points/001-control-flow-via-exceptions.zh-CN.md) | [00-pin-demo](study/mini-swe-agent/00-pin-demo.zh-CN.md) |
+| [001 · 控制流：一次运行怎么结束](study/mini-swe-agent/answer-key/001-control-flow-via-exceptions.zh-CN.md) | [00-pin-demo](study/mini-swe-agent/answer-key/00-pin-demo.zh-CN.md) |
 | 002 · 预算与限额 | |
 | 003 · 环境抽象 | |
 | 004 · 配置合并与接线 | |
