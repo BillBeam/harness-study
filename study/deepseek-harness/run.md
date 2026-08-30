@@ -63,10 +63,12 @@ DSH_API_KEY_VAR=XAI_API_KEY DSH_PROVIDER=xai DSH_MODEL=grok-4.3 scripts/run_dsh.
 | 模型 | `grok-4.3` | `--patch` 里 `agent-default-model.config.model` |
 | key | 只给变量名 `XAI_API_KEY` | `apiKeyEnv` 是一个凭据引用，请求时才解析；仓库里只出现变量名 |
 | 遥测 | 关 | `DSH_TELEMETRY_DISABLED=1` |
-| 权限模式 | `danger-full-access` | `DSH_PERMISSION_MODE`；headless 组合里没有能回答审批的人，留默认的 `ask` 会让需要审批的调用直接失败 |
+| 权限模式 | `danger-full-access` | `DSH_PERMISSION_MODE`，见下 |
 | 会话日志编码 | `none`（不压缩） | `--patch` 里 `session-persistence-jsonl.config.compression`；随包默认是 `zstd` |
 
 `dsh` 自己的默认路由是 `deepseek-official` / `deepseek-v4-flash`，本次没有用；换回去只要不传上面那两段 patch。
+
+`DSH_PERMISSION_MODE=danger-full-access` 一次定两件事，起作用的是前一件：**文件沙箱模式**设成 `danger-full-access`，沙箱不再按可用操作限制文件改动（`packages/sandbox/sandbox-policy/src/index.ts:44-45`），于是这次运行一条审批都没发起过——两份会话日志里 `approval/asked` 与 `approval/decided` 都是 0 条；**审批策略**随之设成 `never`，那不是「自动放行」而是「不问任何人、一律判 `rejected`」，是给无人值守跑法的严格姿态（`packages/interaction/user-approval/src/index.ts:53-57`、`:277`）。留默认的 `workspace-write` 会把策略留在 `ask`，而 headless 组合里没有能答复的人。
 
 ## 两个变体差在哪
 
@@ -88,7 +90,7 @@ DSH_API_KEY_VAR=XAI_API_KEY DSH_PROVIDER=xai DSH_MODEL=grok-4.3 scripts/run_dsh.
 
 **放在哪**：根目录默认是 `$DSH_HOME/sessions`（`packages/bundle/base/cordis.patch.yml:110-113`），`$DSH_HOME` 默认 `~/.dsh`。脚本把它指到 `.dsh-run/<变体>/home`，所以每个变体的会话是干净的一份。根目录之下的布局是 `<root>/--<归一化 cwd>--/<会话 id>/session.jsonl`。
 
-**一次跑产生几个文件**：会话日志**一个会话一个**，没有索引也没有清单文件；本仓库这两次运行各只有一个会话，所以各是一个 `session.jsonl`。不是恒等于一：一次运行里派出的每个子 agent 各带一份自己的 `SessionHeader`（`parentSession`、`origin: subagent`、`delegationDepth`）落进**同一个**项目目录（`packages/subagent/subagent/src/child-agent.ts:144-155`），N 个会话就是 N 个文件——`default` 那次的工具表里就有 `subagent` 与 `subagent_fork`，只是这次没派。文件是惰性建的：只记录意图、第一次 append 才落盘（`packages/session/session-persistence/src/coordinator.ts:680-681`）。
+**一次跑产生几个文件**：会话日志**一个会话一个**，没有索引也没有清单文件；本仓库这两次运行各只有一个会话，所以各是一个 `session.jsonl`。不是恒等于一：一次运行里派出的每个子 agent 各带一份自己的 `SessionHeader`（`parentSession`、`origin: subagent`、`delegationDepth`）落进**同一个**项目目录（`packages/subagent/subagent/src/child-agent.ts:144-155`），N 个会话就是 N 个文件——`default` 那次的工具表里就有 `subagent` 与 `subagent_fork`，只是这次没派。文件是惰性建的：只记录意图、第一次 append 才落盘（`packages/session/session-persistence/src/coordinator.ts:679-680`）。
 
 同一次运行在 `$DSH_HOME` 下另外还会写一个投影缓存文件 `storages/session_projcache/sessions/<会话 id>.json`；`$DSH_HOME/profiles/headless/` 下那四个文件（`cordis.yml`、`cordis.patch.yml`、`package.json`、`pnpm-workspace.yaml`）是 profile 的骨架，第一次启动时建好，之后每次运行只重写 `cordis.yml`，不随运行增加。留进本仓库的是会话日志本身加脚本自己 tee 的终端全文。
 

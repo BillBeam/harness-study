@@ -197,8 +197,10 @@ run() {
   ( cd "$WORK" && python3 -m unittest -v 2>&1 | tail -5 ) || true
 
   # 5) 跑 dsh。headless 是它唯一的一次性无人值守入口：吃一条任务文本，把最终回答
-  #    打到 stdout 然后退出。DSH_PERMISSION_MODE=danger-full-access 把审批策略设成
-  #    never——headless 组合里没有能回答审批的人，留着 ask 会让需要审批的调用直接失败。
+  #    打到 stdout 然后退出。DSH_PERMISSION_MODE=danger-full-access 起作用的是文件沙箱
+  #    这一半：沙箱不再限制文件改动，于是整轮跑下来一条审批都不会发起。它顺带把审批策略
+  #    设成 never，而 never 不是自动放行，是不问任何人、一律判 rejected；留默认的
+  #    workspace-write 会把策略留在 ask，而 headless 组合里没有能答复的人。
   printf '\n=== 5. 跑 dsh --profile headless ===\n'
   local env_args=() name
   for name in "${FORWARD_ENV[@]}"; do
