@@ -27,8 +27,8 @@ title: deepseek-harness 普查 · packages/web/web-fetch-http
 
 插件入口，声明配置模式、校验限额并把 HTTP 抓取 provider 注册进 `ctx.web`。
 
-- `inject = ['web']` 声明该插件在 web 服务就绪后才装载（[packages/web/web-fetch-http/src/index.ts:29](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/web/web-fetch-http/src/index.ts#L29)）
 - `DEFAULT_USER_AGENT` 定义每次请求发出的产品 `User-Agent` 字符串（[packages/web/web-fetch-http/src/index.ts:23](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/web/web-fetch-http/src/index.ts#L23)）
+- `inject = ['web']` 声明该插件在 web 服务就绪后才装载（[packages/web/web-fetch-http/src/index.ts:29](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/web/web-fetch-http/src/index.ts#L29)）
 - Config schema 为响应字节上限、正文字符上限、超时、重定向跳数与 UA 填入默认值 5,000,000 / 100,000 / 30,000 / 5（[packages/web/web-fetch-http/src/index.ts:45-51](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/web/web-fetch-http/src/index.ts#L45-L51)）
 - `assertPositiveFinite` 在非有限或非正数时抛错（[packages/web/web-fetch-http/src/index.ts:57-61](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/web/web-fetch-http/src/index.ts#L57-L61)）
 - `assertTimeoutMs` 额外拒绝超过 `2_147_483_647` 的超时值（[packages/web/web-fetch-http/src/index.ts:63-69](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/web/web-fetch-http/src/index.ts#L63-L69)）

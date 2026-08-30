@@ -6,7 +6,7 @@ title: deepseek-harness 普查 · scripts/（仓库脚本）
 
 # scripts/（仓库脚本）
 
-钉住提交 `cd5ef8148158c3a752a658978873241fdf8e2bbc` 上这一组的逐文件机制普查，共 117 个文件、1472 条证据行。判据、读法与全仓库口径见 [`../census-index.md`](../census-index.md)。
+钉住提交 `cd5ef8148158c3a752a658978873241fdf8e2bbc` 上这一组的逐文件机制普查，共 117 个文件、1754 条证据行。判据、读法与全仓库口径见 [`../census-index.md`](../census-index.md)。
 
 ### scripts/AGENTS.md
 
@@ -1828,6 +1828,393 @@ Git 合并期间对双语配对记录做失败即拒的机械合成，并解析�
 - `isInternalDsh` 与 `isBareSpecifier` 分别界定内部包与裸说明符（排除 `.`、`/`、`#` 开头）（[scripts/verify-client-packages.ts:920-926](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-packages.ts#L920-L926)）
 - `main` 在带 `--fix` 时先跑修复、打印改动清单并重新收集事实；有违规则逐条打印并以 1 退出，否则打印动态/静态包数与显式外部请求数（[scripts/verify-client-packages.ts:936-962](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-packages.ts#L936-L962)）
 - 仅当本文件是入口脚本时才执行 `main`（[scripts/verify-client-packages.ts:964-966](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-packages.ts#L964-L966)）
+
+### scripts/verify-client-ui-i18n.ts
+
+仓库门禁脚本，扫描 Client 侧 TS/TSX 源码里直接写死的界面文案，由 doc-sync/lint 类聚合命令调用。
+
+- `COPY_ATTRIBUTES` 集合与 `COPY_ATTRIBUTE_SUFFIX` 后缀正则决定哪些 JSX 属性名被当作承载文案的属性（[scripts/verify-client-ui-i18n.ts:17-33](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L17-L33)）
+- `COPY_NAME`／`COPY_SUFFIX` 正则决定哪些标识符名被当作承载文案的名字（[scripts/verify-client-ui-i18n.ts:35-36](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L35-L36)）
+- `IMMUTABLE_LANGUAGE_TOKENS` 与 `LOCALE_KEY` 把语言字面量和点分键形字符串排除在检查之外（[scripts/verify-client-ui-i18n.ts:37-50](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L37-L50)）
+- `localeOwner` 让文件名为 `locale.ts`／`locales.ts` 或路径含 `/locales/` 的文件整体跳过扫描（[scripts/verify-client-ui-i18n.ts:66-72](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L66-L72)）
+- `containsProductText` 要求文本非空、不在豁免集合、不匹配键形、且含至少一个 Unicode 字母才算文案（[scripts/verify-client-ui-i18n.ts:74-80](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L74-L80)）
+- `copyAttribute` 让以 `Key` 结尾的属性名不算文案属性（[scripts/verify-client-ui-i18n.ts:86-89](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L86-L89)）
+- `compactText` 把诊断里的字面量压缩成单行并在超过 80 字符时截断加省略号（[scripts/verify-client-ui-i18n.ts:91-94](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L91-L94)）
+- `looksLikeNaturalText` 要求含空白、CJK 字符或首字母大写，用于收紧只在特定位置生效的判定（[scripts/verify-client-ui-i18n.ts:96-99](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L96-L99)）
+- `findUiI18nViolations` 按扩展名选择 TSX 或 TS 的 `ScriptKind` 建立 SourceFile 后遍历（[scripts/verify-client-ui-i18n.ts:107-115](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L107-L115)）
+- `report` 以节点起始位置为键去重，并记录一基行列、原因与压缩文本（[scripts/verify-client-ui-i18n.ts:118-137](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L118-L137)）
+- `collectExpression` 对字符串字面量和无替换模板直接上报，对模板表达式拼接其静态片段后上报（[scripts/verify-client-ui-i18n.ts:144-156](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L144-L156)）
+- 调用表达式直接返回，不再向下收集（[scripts/verify-client-ui-i18n.ts:157-160](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L157-L160)）
+- 括号、`as`、`satisfies`、非空断言被剥壳后继续收集内层表达式（[scripts/verify-client-ui-i18n.ts:161-169](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L161-L169)）
+- 条件表达式收集两个分支（[scripts/verify-client-ui-i18n.ts:170-174](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L170-L174)）
+- 二元表达式中 `&&` 只收集右侧，`+`／`||`／`??` 收集两侧，其余运算符不收集（[scripts/verify-client-ui-i18n.ts:175-187](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L175-L187)）
+- 数组字面量逐元素收集（[scripts/verify-client-ui-i18n.ts:188-193](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L188-L193)）
+- 对象字面量按属性名是否匹配文案名正则来决定该属性值是否只按自然文本判定（[scripts/verify-client-ui-i18n.ts:194-203](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L194-L203)）
+- `enclosingFunctionName` 向上查找最近的函数声明、方法或被赋值给变量的箭头函数取其名字（[scripts/verify-client-ui-i18n.ts:206-219](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L206-L219)）
+- `hasExplicitStringReturn` 判断最近的函数是否显式标注返回 `string`（[scripts/verify-client-ui-i18n.ts:221-233](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L221-L233)）
+- JSX 文本节点直接上报（[scripts/verify-client-ui-i18n.ts:236](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L236)）
+- 文案类 JSX 属性的字符串初始值或表达式初始值被收集（[scripts/verify-client-ui-i18n.ts:238-246](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L238-L246)）
+- 直接作为 JSX 元素或片段子节点的表达式被收集（[scripts/verify-client-ui-i18n.ts:248-252](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L248-L252)）
+- 仅在 `.tsx` 中，文案名属性赋值的初始值被收集（[scripts/verify-client-ui-i18n.ts:254-259](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L254-L259)）
+- 文案名变量声明的初始值被收集（[scripts/verify-client-ui-i18n.ts:261-266](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L261-L266)）
+- 文案名解构绑定的默认值被收集（[scripts/verify-client-ui-i18n.ts:268-273](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L268-L273)）
+- return 语句按所属函数名是否文案名收集，否则在 `.tsx` 且显式返回 `string` 时按自然文本收集（[scripts/verify-client-ui-i18n.ts:275-282](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L275-L282)）
+- 违规按行列排序后返回（[scripts/verify-client-ui-i18n.ts:287](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L287)）
+- `clientSourceRoot` 从路径中截出 `src/client` 根，用于把跨分组的 client 目录纳入扫描（[scripts/verify-client-ui-i18n.ts:295-300](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L295-L300)）
+- `sourceFiles` 用四组 glob 汇总扫描集合、去重、剔除 `.d.ts` 并排序（[scripts/verify-client-ui-i18n.ts:302-318](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L302-L318)）
+- 发现的文件数少于 `MINIMUM_CLIENT_UI_SOURCES`（450）时直接抛错（[scripts/verify-client-ui-i18n.ts:15](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L15)）
+- 文件数不足的抛错在 `main` 中执行，阻止扫描范围被悄悄收窄（[scripts/verify-client-ui-i18n.ts:321-326](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L321-L326)）
+- 有违规时逐条写 stderr 并置 `process.exitCode = 1`（[scripts/verify-client-ui-i18n.ts:327-338](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L327-L338)）
+- 仅当模块自身被直接执行时才运行 `main`（[scripts/verify-client-ui-i18n.ts:342](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-client-ui-i18n.ts#L342)）
+
+### scripts/verify-config-source-ownership.ts
+
+仓库门禁脚本，检查随包发布的 Cordis 配置里是否有把凭据或端点用内联表达式写死的行。
+
+- `SHIPPED_CONFIG_GLOBS` 三条 glob 界定被检查的配置范围（应用配置目录、包级 patch、Python wheel 内的默认组合）（[scripts/verify-config-source-ownership.ts:13-19](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-config-source-ownership.ts#L13-L19)）
+- `INLINE_DENY` 正则匹配 `apiKey`／`baseURL`／`apiKeyEnv`／`authToken`／`headers` 后接 `!!js` 的单行形式（[scripts/verify-config-source-ownership.ts:22](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-config-source-ownership.ts#L22)）
+- `collectConfigSourceOwnershipViolations` 逐文件逐行匹配并产出带文件行号的诊断（[scripts/verify-config-source-ownership.ts:25-41](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-config-source-ownership.ts#L25-L41)）
+- 入口在有失败时把诊断写入 stderr 并以 `process.exit(1)` 结束（[scripts/verify-config-source-ownership.ts:43-49](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-config-source-ownership.ts#L43-L49)）
+- 无失败时向 stdout 写一行通过信息（[scripts/verify-config-source-ownership.ts:51-54](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-config-source-ownership.ts#L51-L54)）
+
+### scripts/verify-cordis-config.ts
+
+仓库门禁脚本，校验所有 Cordis Loader 配置文件的条目元数据、插件包依赖声明与源码平面解析。
+
+- `appOverlayFiles` 把应用示例目录下的 overlay 标记为按 CLI 应用清单解析（[scripts/verify-cordis-config.ts:36-38](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L36-L38)）
+- `metadataFields` 列出必须保持静态、不允许出现表达式的条目字段（[scripts/verify-cordis-config.ts:39](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L39)）
+- `CHOOSER_PACKAGE` 与 `CHOOSER_BACKEND_PACKAGES` 声明一个按运行期字符串挂载后端的包及其四个隐式依赖（[scripts/verify-cordis-config.ts:42-56](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L42-L56)）
+- 主入口遍历所有配置文件，根不是条目数组即报错并跳过（[scripts/verify-cordis-config.ts:60-72](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L60-L72)）
+- 主入口追加六类校验的结果（应用解析、包测试解析、fixture 依赖、源码平面解析、preset 平面分离、client 半边声明）（[scripts/verify-cordis-config.ts:74-79](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L74-L79)）
+- 有错误时逐条写 stderr 并置 `process.exitCode = 1`，否则打印通过的文件数（[scripts/verify-cordis-config.ts:81-87](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L81-L87)）
+- `validateClientHalvesDeclared` 要求 client 分组包的 `exports["./client"]` 与 `dsh.client` 声明同时存在或同时缺席（[scripts/verify-cordis-config.ts:104-117](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L104-L117)）
+- `validatePresetPlaneSeparation` 把 base 与 web-app 两层 patch 的行 id 相并、减去 overlay 中 `disabled: true` 的 id，得到宿主平面活跃集合（[scripts/verify-cordis-config.ts:136-149](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L136-L149)）
+- preset 中与宿主平面活跃集合重合的行 id 被报为违规（[scripts/verify-cordis-config.ts:150-159](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L150-L159)）
+- `loadEntries` 读取并解析一个配置文件，非数组时返回空列表（[scripts/verify-cordis-config.ts:163-166](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L163-L166)）
+- `rowIds` 递归遍历任意嵌套层级，收集同时带 `id` 与 `name` 的对象的 id（[scripts/verify-cordis-config.ts:174-187](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L174-L187)）
+- `validateEntry` 对非对象条目报错，并递归进入 group 的 `config` 与条目的 `insert`（[scripts/verify-cordis-config.ts:189-205](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L189-L205)）
+- include 插件的 `config.patches` 中每个 patch 行被单独记录、校验元数据并递归其 `insert`（[scripts/verify-cordis-config.ts:206-219](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L206-L219)）
+- `recordPlugin` 把每个带字符串 `name` 的条目登记成一条插件引用（[scripts/verify-cordis-config.ts:222-224](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L222-L224)）
+- `validateAppResolution` 把 CLI 应用依赖与所有 bundle 包的依赖合并成应用可解析的依赖面（[scripts/verify-cordis-config.ts:226-247](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L226-L247)）
+- 应用测试目录下的配置改按应用的 dependencies + devDependencies 解析（[scripts/verify-cordis-config.ts:248-253](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L248-L253)）
+- 每个 bundle 由清单里的 `dsh.bundle.patch` 定位其 patch 文件，其行只按该 bundle 自身依赖解析（[scripts/verify-cordis-config.ts:254-264](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L254-L264)）
+- `validatePackageTestResolution` 按包测试目录归组插件引用，逐个所属清单校验（[scripts/verify-cordis-config.ts:273-284](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L273-L284)）
+- `packageTestPluginDependencyErrors` 排除自引用后按 dependencies + devDependencies 校验（[scripts/verify-cordis-config.ts:295-305](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L295-L305)）
+- `packageTestFixtureDependencyErrors` 在扫描不到包级 Loader 配置或不到 fixture 模块时直接返回失败（[scripts/verify-cordis-config.ts:314-342](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L314-L342)）
+- fixture 模块的 import 用 `ts.preProcessFile` 抽取后当作插件引用参与依赖校验（[scripts/verify-cordis-config.ts:333-348](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L333-L348)）
+- `packageTestManifestPath` 用 `packages/<组>/<包>/tests` 正则定位所属包清单（[scripts/verify-cordis-config.ts:352-355](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L352-L355)）
+- `bundleManifestPaths` 通过清单中是否存在 `dsh.bundle.patch` 字符串来发现 bundle 包（[scripts/verify-cordis-config.ts:362-367](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L362-L367)）
+- `bundlePluginDependencyErrors` 排除 bundle 自身包名后只按 `dependencies` 校验（[scripts/verify-cordis-config.ts:376-387](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L376-L387)）
+- `validateSourcePlaneResolution` 读取 `tsconfig.base.json` 编译选项，解析错误直接抛出（[scripts/verify-cordis-config.ts:398-412](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L398-L412)）
+- 自建 `ModuleResolutionHost` 把 `getCurrentDirectory` 固定为仓库根，使解析与进程 cwd 无关（[scripts/verify-cordis-config.ts:416-421](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L416-L421)）
+- 每个本地工作区包的 specifier 必须通过 `paths` 解析到 `.ts`/`.tsx` 扩展名，否则报违规（[scripts/verify-cordis-config.ts:422-437](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L422-L437)）
+- `missingPluginDependencies` 汇总需要的包名并在遇到 chooser 包时额外要求其四个后端包（[scripts/verify-cordis-config.ts:440-462](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L440-L462)）
+- `localPackageDirectories` 从 `packages/*/*` 与 `vendor/*` 的清单建立包名到目录的映射（[scripts/verify-cordis-config.ts:468-476](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L468-L476)）
+- `packageNameFromSpecifier` 把相对路径、绝对路径与带协议的 specifier 排除，其余取裸包名（含 scope）（[scripts/verify-cordis-config.ts:478-485](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L478-L485)）
+- `metadataExpressionErrors` 对每个静态元数据字段递归找出 `!!js` 表达式节点并报错（[scripts/verify-cordis-config.ts:502-509](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L502-L509)）
+- `disabled` 字段本身是表达式时只做解析检查，是普通值时其下嵌套的任何表达式都被报错（[scripts/verify-cordis-config.ts:510-523](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L510-L523)）
+- `disabledExpressionProblem` 用 `new Script()` 只编译不执行表达式，把语法错误提前到门禁阶段（[scripts/verify-cordis-config.ts:533-542](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L533-L542)）
+- `collectExpressionPaths` 递归数组与对象，逐层拼出表达式所在的诊断路径（[scripts/verify-cordis-config.ts:544-555](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-cordis-config.ts#L544-L555)）
+
+### scripts/verify-doc-budgets.ts
+
+仓库门禁脚本，按清单文件对若干长期文档执行字数上限检查。
+
+- `countWords` 按空白切分统计词数，等价于 `wc -w`（[scripts/verify-doc-budgets.ts:17-19](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-budgets.ts#L17-L19)）
+- 从 `scripts/doc-budgets.manifest.json` 读取路径到上限的映射（[scripts/verify-doc-budgets.ts:14](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-budgets.ts#L14)）
+- `--list` 参数把脚本切换为只报告当前用量、以退出码 0 结束的模式（[scripts/verify-doc-budgets.ts:23](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-budgets.ts#L23)）
+- 上限不是正整数时记为失败（[scripts/verify-doc-budgets.ts:28-32](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-budgets.ts#L28-L32)）
+- 被预算的文件不存在时记为失败（[scripts/verify-doc-budgets.ts:33-38](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-budgets.ts#L33-L38)）
+- 词数超过上限时记为失败（[scripts/verify-doc-budgets.ts:39-44](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-budgets.ts#L39-L44)）
+- `--list` 模式打印逐行用量表并 `process.exit(0)`（[scripts/verify-doc-budgets.ts:46-49](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-budgets.ts#L46-L49)）
+- 有失败时写 stderr 并 `process.exit(1)`，否则打印通过数量（[scripts/verify-doc-budgets.ts:51-58](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-budgets.ts#L51-L58)）
+
+### scripts/verify-doc-refs.ts
+
+仓库门禁脚本，扫描包源码注释与字符串里引用的根相对文档路径是否真实存在。
+
+- `PATTERNS` 把扫描范围限定为 `packages/**/*.ts`（[scripts/verify-doc-refs.ts:15](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-refs.ts#L15)）
+- `isExcluded` 排除 `/lib/` 路径、`.d.ts` 与 `vendor/` 前缀（[scripts/verify-doc-refs.ts:18-19](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-refs.ts#L18-L19)）
+- `DOC_REF` 正则匹配以 `docs/` 或 `.agents/notes/` 开头、以 `.md` 结尾的路径 token（[scripts/verify-doc-refs.ts:22](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-refs.ts#L22)）
+- `findViolations` 以 `existsSync` 为判据把不存在的引用记为违规（[scripts/verify-doc-refs.ts:25-27](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-refs.ts#L25-L27)）
+- 无违规时打印检查文件数并 `process.exit(0)`（[scripts/verify-doc-refs.ts:33-36](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-refs.ts#L33-L36)）
+- 有违规时逐条写 stderr 并 `process.exit(1)`（[scripts/verify-doc-refs.ts:38-42](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-refs.ts#L38-L42)）
+
+### scripts/verify-doc-site-fragments.ts
+
+文档站构建后的门禁脚本，对构建产物 HTML 校验片段链接是否可达并检查原始 Markdown 与 llms.txt 是否被输出。
+
+- `routeFor` 把构建出的 HTML 文件名映射成站点路由（[scripts/verify-doc-site-fragments.ts:49-53](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-site-fragments.ts#L49-L53)）
+- `aliasesFor` 为每个页面生成含 `/index`、`.html` 变体的路由别名集合（[scripts/verify-doc-site-fragments.ts:55-62](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-site-fragments.ts#L55-L62)）
+- `decodedFragment` 对百分号编码解码失败时保留原文继续比较（[scripts/verify-doc-site-fragments.ts:64-72](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-site-fragments.ts#L64-L72)）
+- 构建目录下找不到任何 HTML 时抛错（[scripts/verify-doc-site-fragments.ts:81-84](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-site-fragments.ts#L81-L84)）
+- 每页用 JSDOM 解析后收集所有 `[id]` 元素 id 与 `a[name]` 名称作为可达锚点（[scripts/verify-doc-site-fragments.ts:85-94](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-site-fragments.ts#L85-L94)）
+- 两个不同页面共享同一路由别名时抛错（[scripts/verify-doc-site-fragments.ts:96-107](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-site-fragments.ts#L96-L107)）
+- 以哨兵 origin 解析每个带 `#` 的 `a[href]`，解析失败即抛错（[scripts/verify-doc-site-fragments.ts:112-124](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-site-fragments.ts#L112-L124)）
+- 跨源链接与空片段被跳过，不计入检查数（[scripts/verify-doc-site-fragments.ts:125-127](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-site-fragments.ts#L125-L127)）
+- 目标路由不存在或目标页无该 id 时记为 broken（[scripts/verify-doc-site-fragments.ts:128-138](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-site-fragments.ts#L128-L138)）
+- `missingSiteFiles` 按给定顺序返回构建产物中缺失的文件（[scripts/verify-doc-site-fragments.ts:150-152](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-site-fragments.ts#L150-L152)）
+- `main` 把 `rawMarkdownFiles()` 与 `llms.txt` 一并列为构建必须输出的文件（[scripts/verify-doc-site-fragments.ts:154-158](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-site-fragments.ts#L154-L158)）
+- broken 片段与缺失文件分别写入 stderr，`main` 返回 1（[scripts/verify-doc-site-fragments.ts:167-178](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-site-fragments.ts#L167-L178)）
+- 仅当模块作为主模块运行时才把 `main()` 的返回值写入 `process.exitCode`（[scripts/verify-doc-site-fragments.ts:181](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-doc-site-fragments.ts#L181)）
+
+### scripts/verify-dsh-package-licenses.ts
+
+仓库门禁脚本，检查工作区内所有 `@deepseek-ai/dsh*` 包清单是否声明 MIT 许可证。
+
+- `DSH_PACKAGE_NAME` 正则界定受检包名范围（[scripts/verify-dsh-package-licenses.ts:10](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-dsh-package-licenses.ts#L10)）
+- `readManifest` 在清单不是 JSON 对象时抛错（[scripts/verify-dsh-package-licenses.ts:20-26](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-dsh-package-licenses.ts#L20-L26)）
+- `workspaceManifestPaths` 从根清单的 `workspaces` 展开 glob，字段不是字符串数组时抛错（[scripts/verify-dsh-package-licenses.ts:32-46](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-dsh-package-licenses.ts#L32-L46)）
+- `inspectDshPackageLicenses` 对匹配包名计数并在 `license !== 'MIT'` 时产出诊断（[scripts/verify-dsh-package-licenses.ts:57-76](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-dsh-package-licenses.ts#L57-L76)）
+- 入口在有失败时写 stderr 并置 `process.exitCode = 1`，否则写通过计数（[scripts/verify-dsh-package-licenses.ts:78-89](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-dsh-package-licenses.ts#L78-L89)）
+
+### scripts/verify-export-jsdoc.ts
+
+仓库门禁脚本，用 TypeScript 程序遍历所有非 vendored 包源码，检查每个导出名的 JSDoc 完整性。
+
+- `PROTOCOL_STATICS` 与 `PROTOCOL_EXPORTS` 列出被豁免的插件协议槽名（[scripts/verify-export-jsdoc.ts:18-21](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L18-L21)）
+- `isExported` 通过 `export` 修饰符判断语句是否导出（[scripts/verify-export-jsdoc.ts:32-34](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L32-L34)）
+- `isNonPublic` 把 private/protected 修饰符与 `#` 私有标识符成员排除在检查外（[scripts/verify-export-jsdoc.ts:36-40](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L36-L40)）
+- `unwrapExpression` 剥去括号、`as`／`satisfies`／尖括号断言与非空断言，使被包裹的函数表达式仍被识别（[scripts/verify-export-jsdoc.ts:58-65](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L58-L65)）
+- `callableAnnotation` 对混合调用/构造签名的类型字面量返回 `'refuse'`，让门禁失败关闭而非放行（[scripts/verify-export-jsdoc.ts:73-82](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L73-L82)）
+- `heritageExemption` 从基类型查找同名成员，收集基类参数名（去前导下划线）与基类返回是否 void（[scripts/verify-export-jsdoc.ts:92-133](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L92-L133)）
+- 基类声明全为 protected 时不予豁免，视为新公开 API（[scripts/verify-export-jsdoc.ts:106](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L106)）
+- `inferredReturnIsVoidish` 用类型检查器判断未标注方法的推断返回是否 void/undefined/never（[scripts/verify-export-jsdoc.ts:144-150](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L144-L150)）
+- `checkDescribed` 要求存在 JSDoc 且块标签之上有描述文字（[scripts/verify-export-jsdoc.ts:159-162](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L159-L162)）
+- `checkFunctionLike` 同时检查描述、逐参数 `@param` 与非 void 返回的 `@returns`（[scripts/verify-export-jsdoc.ts:175-188](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L175-L188)）
+- `checkClass` 先收集无实现体的重载签名名与 getter 名（[scripts/verify-export-jsdoc.ts:206-210](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L206-L210)）
+- 非公开成员与构造器被跳过，计算属性名成员也被跳过（[scripts/verify-export-jsdoc.ts:212-213](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L212-L213)）
+- 属于插件协议槽的静态成员被跳过（[scripts/verify-export-jsdoc.ts:215](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L215)）
+- 有实现体且存在同名重载签名的方法被跳过（[scripts/verify-export-jsdoc.ts:218](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L218)）
+- 被豁免的方法中，基类未命名的参数（含解构模式）仍要求 `@param`（[scripts/verify-export-jsdoc.ts:222-232](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L222-L232)）
+- 基类返回为 void 而覆写返回非 void 时要求补返回类型标注和 `@returns`（[scripts/verify-export-jsdoc.ts:233-241](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L233-L241)）
+- 公开属性、getter 与无对应 getter 的 setter 各自要求描述文字（[scripts/verify-export-jsdoc.ts:244-251](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L244-L251)）
+- `checkDecl` 对导出函数跳过协议槽名与重载实现，其余走完整函数契约检查（[scripts/verify-export-jsdoc.ts:276-283](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L276-L283)）
+- 导出接口、类型别名、枚举各自要求描述文字（[scripts/verify-export-jsdoc.ts:288-299](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L288-L299)）
+- 变量语句按声明符逐个处理，JSDoc 取自语句而非声明符，且只处理导出清单命名的声明符（[scripts/verify-export-jsdoc.ts:300-306](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L300-L306)）
+- 内联可调用类型标注按其自身参数与返回检查，命名类型标注则把返回契约交给该类型（[scripts/verify-export-jsdoc.ts:307-326](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L307-L326)）
+- 与同名已文档化兄弟声明合并的命名空间不再单独要求文档，并按前缀递归其成员（[scripts/verify-export-jsdoc.ts:330-349](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L330-L349)）
+- `import =` 别名若指向可调用、类或命名空间目标则直接报违规，其余只要求描述文字（[scripts/verify-export-jsdoc.ts:350-367](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L350-L367)）
+- 无法识别的导出语句形式一律报违规，使门禁失败关闭（[scripts/verify-export-jsdoc.ts:368-371](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L368-L371)）
+- `checkScope` 先建立名字到声明的索引并收集无体重载名（[scripts/verify-export-jsdoc.ts:390-409](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L390-L409)）
+- 两阶段派发用 `requested` 记录每条语句要检查的名字集合或全部（[scripts/verify-export-jsdoc.ts:410-419](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L410-L419)）
+- `declare module '…'` 与 `declare global` 增强被跳过（[scripts/verify-export-jsdoc.ts:420-424](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L420-L424)）
+- 带模块 specifier 的再导出被跳过，无 specifier 的 `export { … }` 解析回本地声明（[scripts/verify-export-jsdoc.ts:425-436](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L425-L436)）
+- `export =` 被直接报为不受支持的导出形式（[scripts/verify-export-jsdoc.ts:437-443](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L437-L443)）
+- 默认导出按标识符回溯本地声明、函数表达式走函数契约、其余只要求描述（[scripts/verify-export-jsdoc.ts:444-453](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L444-L453)）
+- 在 ambient 作用域中，除 import 外的语句一律按导出 API 处理（[scripts/verify-export-jsdoc.ts:455-468](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L455-L468)）
+- `sourceEntry` 把 `./lib/types/*.d.ts` 与 `./lib/*.js` 导出目标反推回 `src/*.ts` 源文件（[scripts/verify-export-jsdoc.ts:482-490](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L482-L490)）
+- `restrictedPublicNames` 对未导出 `./src/*` 的包，只把 exports 入口实际可达的名字纳入检查（[scripts/verify-export-jsdoc.ts:499-535](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L499-L535)）
+- `loadCompilerOptions` 在 `tsconfig.base.json` 缺失时回退到最小选项，并强制关闭 emit 与增量（[scripts/verify-export-jsdoc.ts:543-557](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L543-L557)）
+- `collectExportJsdocViolations` 以全部包源码建 Program，逐文件按是否为脚本式声明文件决定 ambient 标志（[scripts/verify-export-jsdoc.ts:567-591](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L567-L591)）
+- `main` 把非空违规列表写 stderr 并 `process.exit(1)`（[scripts/verify-export-jsdoc.ts:594-603](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-export-jsdoc.ts#L594-L603)）
+
+### scripts/verify-md-links.ts
+
+仓库门禁脚本，解析 Markdown AST 校验相对链接的目标文件与片段锚点是否存在。
+
+- `PATTERNS` 列出被扫描的 Markdown 集合，含 README、笔记、docs、包文档与 skills（[scripts/verify-md-links.ts:19-29](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-links.ts#L19-L29)）
+- `isExternal` 把协议相对、根绝对与带 scheme 的 URL 排除，纯 `#frag` 仍按本文件检查（[scripts/verify-md-links.ts:46-51](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-links.ts#L46-L51)）
+- `pathPart` 去掉 `#`／`?` 后百分号解码，解码失败时保留原文让其被判为不存在（[scripts/verify-md-links.ts:61-71](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-links.ts#L61-L71)）
+- `fragmentPart` 取出并解码 `#fragment`，无片段时返回 null（[scripts/verify-md-links.ts:74-85](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-links.ts#L74-L85)）
+- `githubSlug` 按小写化、剔除非字母数字下划线空格连字符、空格转连字符生成锚点（[scripts/verify-md-links.ts:97-99](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-links.ts#L97-L99)）
+- `documentAnchors` 对重复 slug 用占位集合方式递增 `-1`、`-2` 后缀（[scripts/verify-md-links.ts:117-127](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-links.ts#L117-L127)）
+- HTML 节点中先剔除注释再抽取 `<a id="…">` 作为额外锚点（[scripts/verify-md-links.ts:128-132](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-links.ts#L128-L132)）
+- `anchorCache` 以绝对路径为键缓存锚点集合，使同一目标只解析一次（[scripts/verify-md-links.ts:141-150](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-links.ts#L141-L150)）
+- `findViolations` 中空路径解析为源文件自身，目标不存在记 `target` 违规（[scripts/verify-md-links.ts:174-181](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-links.ts#L174-L181)）
+- 只有指向 `.md` 的片段才校验锚点，缺锚点记 `anchor` 违规（[scripts/verify-md-links.ts:182-187](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-links.ts#L182-L187)）
+- 遍历 AST 中的 link、image 与 definition 三类带 url 的节点（[scripts/verify-md-links.ts:189-194](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-links.ts#L189-L194)）
+- 入口用 `isArchivedAgentNotePath` 把归档笔记排除出扫描源（[scripts/verify-md-links.ts:197-201](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-links.ts#L197-L201)）
+- 无违规打印计数并 `process.exit(0)`，有违规逐条写 stderr 并 `process.exit(1)`（[scripts/verify-md-links.ts:204-214](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-links.ts#L204-L214)）
+
+### scripts/verify-md-wrap.ts
+
+仓库门禁脚本，用 Markdown AST 检测跨多物理行的散文段落。
+
+- `PATTERNS` 把扫描范围扩展到 snapshot 与包内的 `system-prompt.expected.md` 期望输出（[scripts/verify-md-wrap.ts:18-30](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-wrap.ts#L18-L30)）
+- `maskVitePressStructure` 在解析前把首部 frontmatter 与 `:::` 容器分隔行置空（[scripts/verify-md-wrap.ts:40-49](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-wrap.ts#L40-L49)）
+- `findViolations` 对结束行大于起始行的 paragraph 节点记违规，并返回 false 停止下钻（[scripts/verify-md-wrap.ts:59-69](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-wrap.ts#L59-L69)）
+- 入口排除归档笔记后扫描并去重（[scripts/verify-md-wrap.ts:73](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-wrap.ts#L73)）
+- 无违规打印计数并 `process.exit(0)`，有违规写 stderr 截断 80 字符后 `process.exit(1)`（[scripts/verify-md-wrap.ts:77-86](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-md-wrap.ts#L77-L86)）
+
+### scripts/verify-mermaid.ts
+
+仓库门禁脚本，用 Mermaid 本体解析仓库文档中每个 mermaid 代码块。
+
+- `PATTERNS` 界定被扫描的 Markdown 集合（[scripts/verify-mermaid.ts:18-28](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-mermaid.ts#L18-L28)）
+- `extractMermaidBlocks` 用 GFM 扩展解析后递归取出 `lang === 'mermaid'` 的代码节点及其起始行（[scripts/verify-mermaid.ts:42-56](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-mermaid.ts#L42-L56)）
+- 扫描时跳过归档笔记，并用 `realpathSync` 去重符号链接指向同一文件的路径（[scripts/verify-mermaid.ts:66-75](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-mermaid.ts#L66-L75)）
+- 用 JSDOM 把 `window`／`document`／`navigator` 定义到 globalThis，使 mermaid 可在 Node 中加载（[scripts/verify-mermaid.ts:78-81](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-mermaid.ts#L78-L81)）
+- 动态 import mermaid 后以 `startOnLoad: false` 与 `maxEdges: 2000` 初始化（[scripts/verify-mermaid.ts:82-88](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-mermaid.ts#L82-L88)）
+- 逐块 `mermaid.parse(..., { suppressErrors: false })`，捕获异常转成违规（[scripts/verify-mermaid.ts:89-95](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-mermaid.ts#L89-L95)）
+- 无违规打印块数与文件数并 `process.exit(0)`，有违规写 stderr 后 `process.exit(1)`（[scripts/verify-mermaid.ts:97-106](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-mermaid.ts#L97-L106)）
+
+### scripts/verify-node-next-types.ts
+
+构建后门禁脚本，在临时工程里以 NodeNext 解析方式对所有工作区包的产出声明做一次外部消费者编译。
+
+- `workspacePackages` 从 `vendor/*` 与 `packages/*/*` 收集有 name 的包清单并按名排序（[scripts/verify-node-next-types.ts:37-45](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L37-L45)）
+- `declarationSpecifierPattern` 匹配声明文件中 `from`／`import()`／`import`／`declare module` 后的 specifier（[scripts/verify-node-next-types.ts:47-48](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L47-L48)）
+- `relativeSpecifiersMissingExtensions` 扫描所有 `lib/types/**/*.d.ts` 找出无扩展名的相对 specifier（[scripts/verify-node-next-types.ts:50-68](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L50-L68)）
+- `publicSpecifiers` 从 `types` 与带 `types` 的 exports 条目推导对外可导入的 specifier，跳过通配与 `./package.json`（[scripts/verify-node-next-types.ts:70-81](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L70-L81)）
+- `linkPackage` 在临时 `node_modules` 下按包名建立指向包目录的符号链接（[scripts/verify-node-next-types.ts:83-88](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L83-L88)）
+- 发现无扩展名相对 specifier 时立即写 stderr 并 `process.exit(1)`（[scripts/verify-node-next-types.ts:91-96](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L91-L96)）
+- 声明 `types` 但产物缺失时提示先构建并 `process.exit(1)`（[scripts/verify-node-next-types.ts:98-106](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L98-L106)）
+- 用 `mkdtempSync` 在仓库根下创建临时工程目录（[scripts/verify-node-next-types.ts:108](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L108)）
+- 链接全部工作区包，并在存在时把根 `@types/node` 也链接进临时树（[scripts/verify-node-next-types.ts:113-121](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L113-L121)）
+- 写入 `type: module` 的 package.json 与 NodeNext + strict + preserveSymlinks 的 tsconfig（[scripts/verify-node-next-types.ts:123-139](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L123-L139)）
+- 生成 `index.ts`，为每个公开 specifier 写一条 `import * as` 语句（[scripts/verify-node-next-types.ts:141-144](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L141-L144)）
+- 用当前 node 进程执行 `node_modules/typescript/bin/tsc` 的 JS 入口而非 `.bin` shim（[scripts/verify-node-next-types.ts:150-153](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L150-L153)）
+- 编译失败时把 stdout 与 stderr 一并输出并标记失败（[scripts/verify-node-next-types.ts:155-159](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L155-L159)）
+- `finally` 中递归强制删除临时目录，失败时最终 `process.exit(1)`（[scripts/verify-node-next-types.ts:160-164](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-node-next-types.ts#L160-L164)）
+
+### scripts/verify-optional-dependency-imports.ts
+
+仓库门禁脚本，用绑定后的 TypeScript 程序判定发布源码里是否在模块作用域静态加载了可选依赖。
+
+- `PUBLISHED_SOURCE` 正则把检查限定在 `packages/<组>/<包>/src/` 与 `apps/<应用>/src/`（[scripts/verify-optional-dependency-imports.ts:36](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-optional-dependency-imports.ts#L36)）
+- `packageOf` 从 specifier 取裸包名并保留 scope（[scripts/verify-optional-dependency-imports.ts:46-49](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-optional-dependency-imports.ts#L46-L49)）
+- `optionalDependencies` 把 `optionalDependencies` 与标了 `optional: true` 且确实声明在 `peerDependencies` 里的 peer 合并成可选集合（[scripts/verify-optional-dependency-imports.ts:68-82](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-optional-dependency-imports.ts#L68-L82)）
+- `optionalByDirectory` 按包目录缓存解析结果，每个目录只读一次清单（[scripts/verify-optional-dependency-imports.ts:85-105](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-optional-dependency-imports.ts#L85-L105)）
+- `bindsValue` 在符号无法解析时返回 true，使不可解析的绑定按加载处理（失败关闭）（[scripts/verify-optional-dependency-imports.ts:114-119](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-optional-dependency-imports.ts#L114-L119)）
+- `importLoadsModule` 把裸 `import 'x'`、默认导入、命名空间导入判为加载，只有 type 相位被判为不加载（[scripts/verify-optional-dependency-imports.ts:127-139](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-optional-dependency-imports.ts#L127-L139)）
+- `exportLoadsModule` 把 `export *` 与命名空间再导出判为加载，逐名再导出按是否绑定值判定（[scripts/verify-optional-dependency-imports.ts:147-153](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-optional-dependency-imports.ts#L147-L153)）
+- `collectOptionalImportViolations` 跳过声明文件与非发布源码，并跳过无可选依赖的包（[scripts/verify-optional-dependency-imports.ts:163-168](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-optional-dependency-imports.ts#L163-L168)）
+- 只检查文件顶层语句中带字符串 specifier 的 import/export，命中可选包且判为加载时产出带行号的诊断（[scripts/verify-optional-dependency-imports.ts:170-188](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-optional-dependency-imports.ts#L170-L188)）
+- `main` 对 host 与 client 两个编译面各建一次 `TypeScriptProject` 并合并去重（[scripts/verify-optional-dependency-imports.ts:192-199](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-optional-dependency-imports.ts#L192-L199)）
+- 有违规时排序写 stderr 并 `process.exit(1)`（[scripts/verify-optional-dependency-imports.ts:200-209](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-optional-dependency-imports.ts#L200-L209)）
+
+### scripts/verify-package-invariants.ts
+
+仓库门禁脚本的薄入口，把包级不变量检查的收集与格式化委托给 `scripts/package-invariants.ts`。
+
+- 调用 `collectPackageInvariantViolations(root)` 收集违规（[scripts/verify-package-invariants.ts:11](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-invariants.ts#L11)）
+- 有违规时逐条格式化写 stderr 并 `process.exit(1)`（[scripts/verify-package-invariants.ts:13-19](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-invariants.ts#L13-L19)）
+- 无违规时用 `packageInvariantOwners(root)` 的数量打印通过信息（[scripts/verify-package-invariants.ts:21](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-invariants.ts#L21)）
+
+### scripts/verify-package-paths.ts
+
+仓库门禁脚本，找出文档与源码里指向已迁移包的失效 `packages/...` 路径引用。
+
+- `PATTERNS` 同时覆盖 Markdown 与 `packages/**/*.ts`（[scripts/verify-package-paths.ts:20-29](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-paths.ts#L20-L29)）
+- `isExcluded` 排除归档笔记、`/lib/` 路径、`.d.ts` 与 `vendor/`（[scripts/verify-package-paths.ts:32-33](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-paths.ts#L32-L33)）
+- `realPackageNames` 枚举 `packages/*/*` 目录名，作为判定引用是否命名真实包的依据（[scripts/verify-package-paths.ts:41-47](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-paths.ts#L41-L47)）
+- `PKG_REF` 的字符类只含普通路径字符，使 glob、占位符与花括号展开在匹配处被截断（[scripts/verify-package-paths.ts:58](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-paths.ts#L58)）
+- `isDriftedPackageReference` 对已存在的路径直接放行（[scripts/verify-package-paths.ts:60-62](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-paths.ts#L60-L62)）
+- 深度为二的包根存在时，其下未构建的 `lib/` 路径被放行（[scripts/verify-package-paths.ts:63-66](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-paths.ts#L63-L66)）
+- 首段本身是已存在分组目录时只从第二段起参与真实包名匹配（[scripts/verify-package-paths.ts:67-76](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-paths.ts#L67-L76)）
+- `findViolations` 在存在性检查前剪掉尾部的 `.` 与 `/`（[scripts/verify-package-paths.ts:80-89](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-paths.ts#L80-L89)）
+- 扫描使用去符号链接后的真实路径，并按结果决定退出码（[scripts/verify-package-paths.ts:91-104](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-paths.ts#L91-L104)）
+
+### scripts/verify-package-readme-limitations.ts
+
+doc-sync 门禁脚本，校验每个包 README 是否带唯一且规范的已知限制小节。
+
+- `CANONICAL` 定义唯一允许的 h2 标题文本（[scripts/verify-package-readme-limitations.ts:15](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-limitations.ts#L15)）
+- `NO_LIMITATIONS` 白名单声明允许省略该小节的包及其理由（[scripts/verify-package-readme-limitations.ts:18-20](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-limitations.ts#L18-L20)）
+- `isLimitationsLike` 用五条正则识别偏离规范但语义等同的标题（[scripts/verify-package-readme-limitations.ts:23-31](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-limitations.ts#L23-L31)）
+- 白名单条目若不对应已扫描包，或理由为空，都记为失败（[scripts/verify-package-readme-limitations.ts:37-44](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-limitations.ts#L37-L44)）
+- 包清单没有同级 README 时记为失败（[scripts/verify-package-readme-limitations.ts:46-51](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-limitations.ts#L46-L51)）
+- 白名单包若仍带限制类标题，逐个记为失败（[scripts/verify-package-readme-limitations.ts:57-62](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-limitations.ts#L57-L62)）
+- 非白名单包缺该小节记为失败（[scripts/verify-package-readme-limitations.ts:64-68](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-limitations.ts#L64-L68)）
+- 出现多于一个限制类标题记为失败（[scripts/verify-package-readme-limitations.ts:69-72](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-limitations.ts#L69-L72)）
+- 标题层级不是 2 或原文不等于规范文本记为失败（[scripts/verify-package-readme-limitations.ts:73-76](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-limitations.ts#L73-L76)）
+- 小节正文截止到下一个标题行，且必须含至少一条顶层 `- ` 列表项（[scripts/verify-package-readme-limitations.ts:77-85](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-limitations.ts#L77-L85)）
+- 有失败时写 stderr 并 `process.exit(1)`，否则打印检查与白名单计数（[scripts/verify-package-readme-limitations.ts:87-93](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-limitations.ts#L87-L93)）
+
+### scripts/verify-package-readme-model-experience.ts
+
+doc-sync 门禁脚本，校验每个包 README 的 Model Experience 小节结构、字段、嵌套逐字块与目录链接。
+
+- 五个标题常量固定小节与三个字段的精确文本（[scripts/verify-package-readme-model-experience.ts:13-18](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L13-L18)）
+- `NO_MODEL_EXPERIENCE_SECTION` 列出必须完全省略该小节的包及审计理由（[scripts/verify-package-readme-model-experience.ts:32-38](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L32-L38)）
+- `SENTENCE_MODEL_EXPERIENCE` 列出可用一句话加 KV 缓存字段的包，并区分 `none` 与 `indirect` 两种句式（[scripts/verify-package-readme-model-experience.ts:45-182](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L45-L182)）
+- `validateNestedVerbatim` 要求字段段落之后的内容必须是带标题的 H5 加一段非空的 ` ```markdown ` 围栏（[scripts/verify-package-readme-model-experience.ts:207-240](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L207-L240)）
+- 同一条目内 H5 标题的锚点片段不得重复（[scripts/verify-package-readme-model-experience.ts:221-226](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L221-L226)）
+- `toolCatalogLinkFragments` 抽取指向 `../../../docs/tool-catalog.md#…` 的锚点片段（[scripts/verify-package-readme-model-experience.ts:253-256](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L253-L256)）
+- 从 `docs/tool-catalog.md` 读取全部 H2 标题，建立合法锚点片段集合（[scripts/verify-package-readme-model-experience.ts:258-262](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L258-L262)）
+- 无小节白名单条目要求命名真实包、理由非空、且不与句式白名单重叠（[scripts/verify-package-readme-model-experience.ts:277-287](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L277-L287)）
+- 句式白名单条目同样要求命名真实包且理由非空（[scripts/verify-package-readme-model-experience.ts:289-296](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L289-L296)）
+- 包 README 缺失即记为失败（[scripts/verify-package-readme-model-experience.ts:298-305](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L298-L305)）
+- 被审计为省略的包若出现任何层级的 Model Experience 标题都记为失败（[scripts/verify-package-readme-model-experience.ts:315-324](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L315-L324)）
+- 层级或原文不等于规范 h2 的标题被判为非规范并终止该文件检查（[scripts/verify-package-readme-model-experience.ts:325-329](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L325-L329)）
+- 缺小节或出现多份小节各自记为失败（[scripts/verify-package-readme-model-experience.ts:330-341](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L330-L341)）
+- 有限制小节时二者必须是最后两个 H2 且顺序固定，无限制小节时 Model Experience 必须是最后一个 H2（[scripts/verify-package-readme-model-experience.ts:342-355](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L342-L355)）
+- 小节范围按下一个 H2 切分，同时保留原始行切片供空行与围栏检查（[scripts/verify-package-readme-model-experience.ts:357-364](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L357-L364)）
+- 句式白名单包要求恰好三行内容：匹配前缀且以句号结尾的一句、KV 缓存 H4、一段非空正文（[scripts/verify-package-readme-model-experience.ts:365-383](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L365-L383)）
+- 句式形态还要求三个元素之间各隔一个空行（[scripts/verify-package-readme-model-experience.ts:384-390](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L384-L390)）
+- 未登记在句式白名单却使用短句形态的包被记为失败（[scripts/verify-package-readme-model-experience.ts:397-401](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L397-L401)）
+- 结构化形态要求小节首行即为 H3 条目起点（[scripts/verify-package-readme-model-experience.ts:403-409](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L403-L409)）
+- 每个条目的 H3 锚点片段必须非空且在文件内不重复（[scripts/verify-package-readme-model-experience.ts:414-430](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L414-L430)）
+- 每个条目必须恰好含三个有序 H4 字段且首个紧跟标题（[scripts/verify-package-readme-model-experience.ts:431-445](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L431-L445)）
+- 每个字段标题必须逐字匹配，且后接恰好一段非空正文并隔一空行（[scripts/verify-package-readme-model-experience.ts:448-468](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L448-L468)）
+- 字段正文之后除 H5 外的内容一律记为失败，且每个 H5 必须恰好拥有一个围栏（[scripts/verify-package-readme-model-experience.ts:469-493](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L469-L493)）
+- 三个字段正文中不得出现指向本文局部片段的链接（[scripts/verify-package-readme-model-experience.ts:503-507](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L503-L507)）
+- 标题含 “system prompt” 的条目必须在模型可见字段下带逐字 markdown 块（[scripts/verify-package-readme-model-experience.ts:521-526](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L521-L526)）
+- 结构化小节至少要有一个条目带行内代码、嵌套 markdown 块或目录锚点链接（[scripts/verify-package-readme-model-experience.ts:527-534](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L527-L534)）
+- 标题含 schema 的条目必须链接工具目录锚点，且片段必须命中真实 H2（[scripts/verify-package-readme-model-experience.ts:535-551](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L535-L551)）
+- 通过时打印含九类计数的汇总并 `process.exit(0)`，失败时逐条写 stderr 并 `process.exit(1)`（[scripts/verify-package-readme-model-experience.ts:560-569](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-package-readme-model-experience.ts#L560-L569)）
+
+### scripts/verify-public-repository-links.ts
+
+仓库门禁脚本，扫描所有被 git 跟踪的文件，拒绝对某个不可访问仓库的引用。
+
+- 被禁的 owner 与仓库名由数组拼接而成，避免脚本自身命中检查（[scripts/verify-public-repository-links.ts:9-11](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-public-repository-links.ts#L9-L11)）
+- `canonicalReferenceText` 归一化反斜杠转义、`\u` 转义、百分号编码、数字与命名 HTML 实体，再做 NFKC 与小写（[scripts/verify-public-repository-links.ts:19-32](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-public-repository-links.ts#L19-L32)）
+- `findUnavailableRepositoryReferences` 跳过归档笔记目录，其余逐行归一化后匹配（[scripts/verify-public-repository-links.ts:48-57](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-public-repository-links.ts#L48-L57)）
+- `trackedFiles` 用 `git ls-files -z` 取跟踪文件清单（[scripts/verify-public-repository-links.ts:59-63](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-public-repository-links.ts#L59-L63)）
+- 符号链接读取其目标文本而非内容，含 NUL 的二进制文件被跳过（[scripts/verify-public-repository-links.ts:65-77](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-public-repository-links.ts#L65-L77)）
+- 入口用 `pathToFileURL` 比较判定是否主模块，有引用时写 stderr 并置 `process.exitCode = 1`（[scripts/verify-public-repository-links.ts:79-90](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-public-repository-links.ts#L79-L90)）
+
+### scripts/verify-runtime-closure.ts
+
+仓库门禁脚本，检查可执行运行时清单是否覆盖所有随包预设引用的插件与其依赖图中的必需工作区 peer。
+
+- `AGENT_PRESET_GLOB` 界定被检查的预设配置路径（[scripts/verify-runtime-closure.ts:33](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L33)）
+- `verifyRuntimeClosure` 读取运行时清单、工作区包表、平台清单与预设文件（[scripts/verify-runtime-closure.ts:51-57](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L51-L57)）
+- 运行时依赖中属于工作区的包被作为广度优先遍历的起点入队（[scripts/verify-runtime-closure.ts:61-65](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L61-L65)）
+- 预设数为零或平台清单无目标时各记一条失败（[scripts/verify-runtime-closure.ts:68-69](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L68-L69)）
+- 遍历中非可选的工作区 peer 若未在运行时依赖中声明为 `workspace:` 即记为失败并附依赖链（[scripts/verify-runtime-closure.ts:76-82](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L76-L82)）
+- 当前包的 dependencies 与 optionalDependencies 合并后把未访问的工作区包继续入队（[scripts/verify-runtime-closure.ts:83-91](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L83-L91)）
+- 入口用 `parseArgs` 接受 `--manifest` 覆盖默认运行时清单路径（[scripts/verify-runtime-closure.ts:101-107](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L101-L107)）
+- 有失败时写 stderr 并置 `process.exitCode = 1`，否则打印预设与包计数（[scripts/verify-runtime-closure.ts:108-117](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L108-L117)）
+- `missingPresetPlugins` 对每个预设、每个平台目标分别求解活跃插件集合，预设根非数组时报错（[scripts/verify-runtime-closure.ts:119-152](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L119-L152)）
+- 缺失记录按 “预设 -> 插件” 归并，并把命中的平台目标聚合到一条诊断里（[scripts/verify-runtime-closure.ts:142-150](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L142-L150)）
+- `activeBarePluginPackages` 递归 group 的 `config`，父级 disabled 会传播给子行（[scripts/verify-runtime-closure.ts:154-170](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L154-L170)）
+- `disabledOnPlatform` 只识别 `process.platform === / !== 'win32'|'linux'|'darwin'` 这一种表达式并按目标平台求值（[scripts/verify-runtime-closure.ts:172-179](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L172-L179)）
+- `processPlatformForTarget` 把平台标签映射为 `process.platform` 值，未知目标直接抛错（[scripts/verify-runtime-closure.ts:181-186](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L181-L186)）
+- `barePackageName` 排除相对、绝对与带冒号的 specifier 后取裸包名（[scripts/verify-runtime-closure.ts:188-195](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L188-L195)）
+- `loadWorkspacePackages` 从 `packages/*/*` 与 `vendor/*` 建立包名到清单的映射（[scripts/verify-runtime-closure.ts:201-211](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L201-L211)）
+- `formatChain` 沿 parents 表回溯出从运行时到目标包的完整依赖链文本（[scripts/verify-runtime-closure.ts:221-233](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-runtime-closure.ts#L221-L233)）
+
+### scripts/verify-skill-invocation-metadata.ts
+
+仓库门禁脚本，校验各 skill 目录下两套产品调用策略元数据是否一致。
+
+- `parseSkillFrontmatter` 要求 SKILL.md 以 `---` 开头且 frontmatter 闭合并解析为 YAML 对象，否则抛错（[scripts/verify-skill-invocation-metadata.ts:20-28](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-skill-invocation-metadata.ts#L20-L28)）
+- `skillDirectories` 只收集同时存在 `agents/openai.yaml` 的 skill 目录（[scripts/verify-skill-invocation-metadata.ts:31-38](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-skill-invocation-metadata.ts#L31-L38)）
+- 有 `agents/openai.yaml` 但缺同级 SKILL.md 时记为违规（[scripts/verify-skill-invocation-metadata.ts:52-55](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-skill-invocation-metadata.ts#L52-L55)）
+- 两个文件的解析异常各自转成一条违规并跳过该 skill（[scripts/verify-skill-invocation-metadata.ts:57-74](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-skill-invocation-metadata.ts#L57-L74)）
+- `disable-model-invocation`、`user-invocable` 与 `policy.allow_implicit_invocation` 非布尔值时各记违规并跳过（[scripts/verify-skill-invocation-metadata.ts:76-92](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-skill-invocation-metadata.ts#L76-L92)）
+- 两侧推导出的 manual-only 结论不一致时记为违规（[scripts/verify-skill-invocation-metadata.ts:94-101](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-skill-invocation-metadata.ts#L94-L101)）
+- manual-only 的 skill 若同时 `user-invocable: false` 记为违规（[scripts/verify-skill-invocation-metadata.ts:102-104](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-skill-invocation-metadata.ts#L102-L104)）
+- 入口在有违规时写 stderr 并 `process.exit(1)`，否则写通过的配对数（[scripts/verify-skill-invocation-metadata.ts:110-122](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-skill-invocation-metadata.ts#L110-L122)）
+
+### scripts/verify-subsystem-pages.ts
+
+doc-sync 门禁脚本，审计每个包分组的英文分组 README 是否链接了真实存在的子系统文档页。
+
+- `GROUPS_WITHOUT_SUBSYSTEM_PAGE` 列出七个免除分组及其理由（[scripts/verify-subsystem-pages.ts:17-25](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-subsystem-pages.ts#L17-L25)）
+- `groupOf` 在路径取不到分组段时抛错（[scripts/verify-subsystem-pages.ts:45-49](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-subsystem-pages.ts#L45-L49)）
+- `subsystemLinks` 只接受形如 `../../docs/subsystems/<页>.md` 的链接，并排除 README 与 `.zh.md`（[scripts/verify-subsystem-pages.ts:52-61](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-subsystem-pages.ts#L52-L61)）
+- 分组集合由分组 README 与子包清单两条 glob 合并推导（[scripts/verify-subsystem-pages.ts:73-75](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-subsystem-pages.ts#L73-L75)）
+- 免除条目若不对应真实分组或理由为空各记一条违规（[scripts/verify-subsystem-pages.ts:80-87](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-subsystem-pages.ts#L80-L87)）
+- 分组缺少分组 README 时记为违规并跳过（[scripts/verify-subsystem-pages.ts:89-95](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-subsystem-pages.ts#L89-L95)）
+- 无子系统链接且未被免除时记为违规，被免除时计入 exempt（[scripts/verify-subsystem-pages.ts:97-109](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-subsystem-pages.ts#L97-L109)）
+- 已有链接却仍留在免除表中的分组记为违规（[scripts/verify-subsystem-pages.ts:111-114](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-subsystem-pages.ts#L111-L114)）
+- 被链接的子系统页文件不存在时记为违规（[scripts/verify-subsystem-pages.ts:115-119](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-subsystem-pages.ts#L115-L119)）
+- `main` 在有违规时写 stderr 并 `process.exit(1)`，否则打印分组、已链接与免除计数（[scripts/verify-subsystem-pages.ts:126-137](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-subsystem-pages.ts#L126-L137)）
+- 仅当模块被直接执行时才运行 `main`（[scripts/verify-subsystem-pages.ts:139](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/scripts/verify-subsystem-pages.ts#L139)）
 
 ### scripts/verify-translation-pairing.ts
 

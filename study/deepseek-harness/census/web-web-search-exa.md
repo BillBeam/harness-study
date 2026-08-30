@@ -28,9 +28,9 @@ title: deepseek-harness 普查 · packages/web/web-search-exa
 
 - `inject = ['web']` 声明该插件在 web 服务就绪后才装载（[packages/web/web-search-exa/src/index.ts:32](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/web/web-search-exa/src/index.ts#L32)）
 - Config schema 把 `searchType` 限定在 `auto`/`keyword`/`neural`，并要求 `numResults` 与 `highlightsPerResult` 为不小于 1 的整数（[packages/web/web-search-exa/src/index.ts:48-54](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/web/web-search-exa/src/index.ts#L48-L54)）
+- `apply` 构造 `ExaSearchProvider` 并调用 `ctx.web.registerSearchProvider` 注册（[packages/web/web-search-exa/src/index.ts:57-58](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/web/web-search-exa/src/index.ts#L57-L58)）
 - `apply` 在配置未给密钥时回落到启动环境的 `EXA_API_KEY`，再回落到空串（[packages/web/web-search-exa/src/index.ts:61](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/web/web-search-exa/src/index.ts#L61)）
 - `apply` 为端点、检索模式、每条高亮数补齐常量默认值，并只在配置给了 `numResults` 时才带上该字段（[packages/web/web-search-exa/src/index.ts:62-65](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/web/web-search-exa/src/index.ts#L62-L65)）
-- `apply` 构造 `ExaSearchProvider` 并调用 `ctx.web.registerSearchProvider` 注册（[packages/web/web-search-exa/src/index.ts:57-58](https://github.com/deepseek-ai/deepseek-harness/blob/cd5ef8148158c3a752a658978873241fdf8e2bbc/packages/web/web-search-exa/src/index.ts#L57-L58)）
 
 ### packages/web/web-search-exa/src/invariant.ts
 

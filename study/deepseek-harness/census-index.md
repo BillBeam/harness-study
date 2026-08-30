@@ -14,7 +14,7 @@ title: deepseek-harness 普查索引
 
 **证据行数**的口径是该文件中以 `- ` 开头的行数（含写「无运行期机制」的那一行）。
 
-共 268 个普查文件、3812 个文件、**24942 条证据行**。
+共 268 个普查文件、3812 个文件、**27434 条证据行**。
 
 ## 一、工作区包
 
@@ -52,11 +52,11 @@ title: deepseek-harness 普查索引
 | client-ui-chat | `packages/client/ui-chat` | 89 | 520 | [`census/client-ui-chat.md`](client-ui-chat.md) |
 | client-ui-commands | `packages/client/ui-commands` | 15 | 92 | [`census/client-ui-commands.md`](client-ui-commands.md) |
 | client-ui-conversation | `packages/client/ui-conversation` | 69 | 573 | [`census/client-ui-conversation.md`](client-ui-conversation.md) |
-| client-ui-deliverables | `packages/client/ui-deliverables` | 12 | 0 | [`census/client-ui-deliverables.md`](client-ui-deliverables.md) |
-| client-ui-directory-picker-browse | `packages/client/ui-directory-picker-browse` | 11 | 0 | [`census/client-ui-directory-picker-browse.md`](client-ui-directory-picker-browse.md) |
-| client-ui-directory-picker-native | `packages/client/ui-directory-picker-native` | 8 | 0 | [`census/client-ui-directory-picker-native.md`](client-ui-directory-picker-native.md) |
-| client-ui-goal | `packages/client/ui-goal` | 15 | 0 | [`census/client-ui-goal.md`](client-ui-goal.md) |
-| client-ui-input-trigger | `packages/client/ui-input-trigger` | 19 | 0 | [`census/client-ui-input-trigger.md`](client-ui-input-trigger.md) |
+| client-ui-deliverables | `packages/client/ui-deliverables` | 12 | 66 | [`census/client-ui-deliverables.md`](client-ui-deliverables.md) |
+| client-ui-directory-picker-browse | `packages/client/ui-directory-picker-browse` | 11 | 98 | [`census/client-ui-directory-picker-browse.md`](client-ui-directory-picker-browse.md) |
+| client-ui-directory-picker-native | `packages/client/ui-directory-picker-native` | 8 | 21 | [`census/client-ui-directory-picker-native.md`](client-ui-directory-picker-native.md) |
+| client-ui-goal | `packages/client/ui-goal` | 15 | 43 | [`census/client-ui-goal.md`](client-ui-goal.md) |
+| client-ui-input-trigger | `packages/client/ui-input-trigger` | 19 | 111 | [`census/client-ui-input-trigger.md`](client-ui-input-trigger.md) |
 | client-ui-jobs | `packages/client/ui-jobs` | 11 | 39 | [`census/client-ui-jobs.md`](client-ui-jobs.md) |
 | client-ui-layout | `packages/client/ui-layout` | 15 | 66 | [`census/client-ui-layout.md`](client-ui-layout.md) |
 | client-ui-message-feedback | `packages/client/ui-message-feedback` | 13 | 59 | [`census/client-ui-message-feedback.md`](client-ui-message-feedback.md) |
@@ -84,10 +84,10 @@ title: deepseek-harness 普查索引
 | client-ui-workspace | `packages/client/ui-workspace` | 20 | 182 | [`census/client-ui-workspace.md`](client-ui-workspace.md) |
 | client-web | `packages/client/web` | 14 | 43 | [`census/client-web.md`](client-web.md) |
 | code-runtime-code-runtime | `packages/code-runtime/code-runtime` | 6 | 17 | [`census/code-runtime-code-runtime.md`](code-runtime-code-runtime.md) |
-| code-runtime-code-runtime-python | `packages/code-runtime/code-runtime-python` | 8 | 0 | [`census/code-runtime-code-runtime-python.md`](code-runtime-code-runtime-python.md) |
-| code-runtime-code-runtime-worker-thread | `packages/code-runtime/code-runtime-worker-thread` | 11 | 0 | [`census/code-runtime-code-runtime-worker-thread.md`](code-runtime-code-runtime-worker-thread.md) |
-| compaction-command-compact | `packages/compaction/command-compact` | 5 | 0 | [`census/compaction-command-compact.md`](compaction-command-compact.md) |
-| compaction-compaction | `packages/compaction/compaction` | 10 | 0 | [`census/compaction-compaction.md`](compaction-compaction.md) |
+| code-runtime-code-runtime-python | `packages/code-runtime/code-runtime-python` | 8 | 41 | [`census/code-runtime-code-runtime-python.md`](code-runtime-code-runtime-python.md) |
+| code-runtime-code-runtime-worker-thread | `packages/code-runtime/code-runtime-worker-thread` | 11 | 103 | [`census/code-runtime-code-runtime-worker-thread.md`](code-runtime-code-runtime-worker-thread.md) |
+| compaction-command-compact | `packages/compaction/command-compact` | 5 | 18 | [`census/compaction-command-compact.md`](compaction-command-compact.md) |
+| compaction-compaction | `packages/compaction/compaction` | 10 | 39 | [`census/compaction-compaction.md`](compaction-compaction.md) |
 | compaction-compaction-basic | `packages/compaction/compaction-basic` | 9 | 114 | [`census/compaction-compaction-basic.md`](compaction-compaction-basic.md) |
 | compaction-compaction-tool-result-pruner | `packages/compaction/compaction-tool-result-pruner` | 7 | 33 | [`census/compaction-compaction-tool-result-pruner.md`](compaction-compaction-tool-result-pruner.md) |
 | context-agent-instructions | `packages/context/agent-instructions` | 10 | 110 | [`census/context-agent-instructions.md`](context-agent-instructions.md) |
@@ -118,7 +118,7 @@ title: deepseek-harness 普查索引
 | experimental-inspector | `packages/experimental/inspector` | 155 | 1069 | [`census/experimental-inspector.md`](experimental-inspector.md) |
 | experimental-tool-agent-team | `packages/experimental/tool-agent-team` | 5 | 45 | [`census/experimental-tool-agent-team.md`](experimental-tool-agent-team.md) |
 | experimental-webworker-packer | `packages/experimental/webworker-packer` | 12 | 81 | [`census/experimental-webworker-packer.md`](experimental-webworker-packer.md) |
-| experimental-webworker-runtime | `packages/experimental/webworker-runtime` | 83 | 103 | [`census/experimental-webworker-runtime.md`](experimental-webworker-runtime.md) |
+| experimental-webworker-runtime | `packages/experimental/webworker-runtime` | 83 | 570 | [`census/experimental-webworker-runtime.md`](experimental-webworker-runtime.md) |
 | extensions-cordis-client-runner | `packages/extensions/cordis-client-runner` | 16 | 194 | [`census/extensions-cordis-client-runner.md`](extensions-cordis-client-runner.md) |
 | extensions-cordis-host-runner | `packages/extensions/cordis-host-runner` | 11 | 191 | [`census/extensions-cordis-host-runner.md`](extensions-cordis-host-runner.md) |
 | extensions-tool-cordis | `packages/extensions/tool-cordis` | 11 | 137 | [`census/extensions-tool-cordis.md`](extensions-tool-cordis.md) |
@@ -214,15 +214,15 @@ title: deepseek-harness 普查索引
 | shell-tool-bash | `packages/shell/tool-bash` | 7 | 45 | [`census/shell-tool-bash.md`](shell-tool-bash.md) |
 | shell-tool-bash-persistent | `packages/shell/tool-bash-persistent` | 5 | 45 | [`census/shell-tool-bash-persistent.md`](shell-tool-bash-persistent.md) |
 | shell-tool-pwsh | `packages/shell/tool-pwsh` | 7 | 44 | [`census/shell-tool-pwsh.md`](shell-tool-pwsh.md) |
-| shell-tool-pwsh-persistent | `packages/shell/tool-pwsh-persistent` | 5 | 0 | [`census/shell-tool-pwsh-persistent.md`](shell-tool-pwsh-persistent.md) |
-| skill-skill | `packages/skill/skill` | 5 | 0 | [`census/skill-skill.md`](skill-skill.md) |
-| skill-skill-badge | `packages/skill/skill-badge` | 6 | 0 | [`census/skill-skill-badge.md`](skill-skill-badge.md) |
-| skill-skill-filesystem | `packages/skill/skill-filesystem` | 5 | 0 | [`census/skill-skill-filesystem.md`](skill-skill-filesystem.md) |
-| skill-tool-skill | `packages/skill/tool-skill` | 5 | 0 | [`census/skill-tool-skill.md`](skill-tool-skill.md) |
-| spill-spill | `packages/spill/spill` | 6 | 0 | [`census/spill-spill.md`](spill-spill.md) |
-| spill-spill-local | `packages/spill/spill-local` | 7 | 0 | [`census/spill-spill-local.md`](spill-spill-local.md) |
-| spill-spill-policy | `packages/spill/spill-policy` | 6 | 0 | [`census/spill-spill-policy.md`](spill-spill-policy.md) |
-| storage-storage | `packages/storage/storage` | 8 | 0 | [`census/storage-storage.md`](storage-storage.md) |
+| shell-tool-pwsh-persistent | `packages/shell/tool-pwsh-persistent` | 5 | 49 | [`census/shell-tool-pwsh-persistent.md`](shell-tool-pwsh-persistent.md) |
+| skill-skill | `packages/skill/skill` | 5 | 51 | [`census/skill-skill.md`](skill-skill.md) |
+| skill-skill-badge | `packages/skill/skill-badge` | 6 | 17 | [`census/skill-skill-badge.md`](skill-skill-badge.md) |
+| skill-skill-filesystem | `packages/skill/skill-filesystem` | 5 | 65 | [`census/skill-skill-filesystem.md`](skill-skill-filesystem.md) |
+| skill-tool-skill | `packages/skill/tool-skill` | 5 | 43 | [`census/skill-tool-skill.md`](skill-tool-skill.md) |
+| spill-spill | `packages/spill/spill` | 6 | 12 | [`census/spill-spill.md`](spill-spill.md) |
+| spill-spill-local | `packages/spill/spill-local` | 7 | 54 | [`census/spill-spill-local.md`](spill-spill-local.md) |
+| spill-spill-policy | `packages/spill/spill-policy` | 6 | 32 | [`census/spill-spill-policy.md`](spill-spill-policy.md) |
+| storage-storage | `packages/storage/storage` | 8 | 22 | [`census/storage-storage.md`](storage-storage.md) |
 | storage-storage-domain | `packages/storage/storage-domain` | 9 | 58 | [`census/storage-storage-domain.md`](storage-storage-domain.md) |
 | storage-storage-json | `packages/storage/storage-json` | 9 | 70 | [`census/storage-storage-json.md`](storage-storage-json.md) |
 | storage-storage-sqlite | `packages/storage/storage-sqlite` | 7 | 48 | [`census/storage-storage-sqlite.md`](storage-storage-sqlite.md) |
@@ -277,13 +277,13 @@ title: deepseek-harness 普查索引
 | web-web-fetch-http | `packages/web/web-fetch-http` | 8 | 67 | [`census/web-web-fetch-http.md`](web-web-fetch-http.md) |
 | web-web-search-deepseek | `packages/web/web-search-deepseek` | 7 | 47 | [`census/web-web-search-deepseek.md`](web-web-search-deepseek.md) |
 | web-web-search-exa | `packages/web/web-search-exa` | 7 | 29 | [`census/web-web-search-exa.md`](web-web-search-exa.md) |
-| web-web-search-perplexity | `packages/web/web-search-perplexity` | 7 | 28 | [`census/web-web-search-perplexity.md`](web-web-search-perplexity.md) |
-| webhook-webhook | `packages/webhook/webhook` | 8 | 0 | [`census/webhook-webhook.md`](webhook-webhook.md) |
-| webhook-webhook-github | `packages/webhook/webhook-github` | 8 | 0 | [`census/webhook-webhook-github.md`](webhook-webhook-github.md) |
-| workflow-tool-ralph | `packages/workflow/tool-ralph` | 5 | 0 | [`census/workflow-tool-ralph.md`](workflow-tool-ralph.md) |
-| workflow-tool-workflow | `packages/workflow/tool-workflow` | 6 | 0 | [`census/workflow-tool-workflow.md`](workflow-tool-workflow.md) |
-| workflow-workflow | `packages/workflow/workflow` | 7 | 0 | [`census/workflow-workflow.md`](workflow-workflow.md) |
-| workflow-workflow-worker-thread | `packages/workflow/workflow-worker-thread` | 14 | 0 | [`census/workflow-workflow-worker-thread.md`](workflow-workflow-worker-thread.md) |
+| web-web-search-perplexity | `packages/web/web-search-perplexity` | 7 | 29 | [`census/web-web-search-perplexity.md`](web-web-search-perplexity.md) |
+| webhook-webhook | `packages/webhook/webhook` | 8 | 36 | [`census/webhook-webhook.md`](webhook-webhook.md) |
+| webhook-webhook-github | `packages/webhook/webhook-github` | 8 | 30 | [`census/webhook-webhook-github.md`](webhook-webhook-github.md) |
+| workflow-tool-ralph | `packages/workflow/tool-ralph` | 5 | 39 | [`census/workflow-tool-ralph.md`](workflow-tool-ralph.md) |
+| workflow-tool-workflow | `packages/workflow/tool-workflow` | 6 | 39 | [`census/workflow-tool-workflow.md`](workflow-tool-workflow.md) |
+| workflow-workflow | `packages/workflow/workflow` | 7 | 31 | [`census/workflow-workflow.md`](workflow-workflow.md) |
+| workflow-workflow-worker-thread | `packages/workflow/workflow-worker-thread` | 14 | 152 | [`census/workflow-workflow-worker-thread.md`](workflow-workflow-worker-thread.md) |
 | workspace-workspace | `packages/workspace/workspace` | 9 | 0 | [`census/workspace-workspace.md`](workspace-workspace.md) |
 
 ## 二、不属于任何工作区包的文件
@@ -294,9 +294,9 @@ title: deepseek-harness 普查索引
 | --- | --- | ---: | ---: | --- |
 | _docs | docs/（随包文档） | 121 | 1935 | [`census/_docs.md`](_docs.md) |
 | _root | 仓库根目录与未归入工作区包的文件 | 88 | 325 | [`census/_root.md`](_root.md) |
-| _scripts | scripts/（仓库脚本） | 117 | 1472 | [`census/_scripts.md`](_scripts.md) |
-| _snapshots | snapshots/（快照夹具） | 615 | 3056 | [`census/_snapshots.md`](_snapshots.md) |
-| _website | website（文档站） | 5 | 0 | [`census/_website.md`](_website.md) |
+| _scripts | scripts/（仓库脚本） | 117 | 1754 | [`census/_scripts.md`](_scripts.md) |
+| _snapshots | snapshots/（快照夹具） | 615 | 3528 | [`census/_snapshots.md`](_snapshots.md) |
+| _website | website（文档站） | 5 | 58 | [`census/_website.md`](_website.md) |
 
-两节合计 **3812** 个文件、**24942** 条证据行。
+两节合计 **3812** 个文件、**27434** 条证据行。
 
