@@ -1,9 +1,38 @@
-# Log
+# 日志
 
-> 中文：[LOG.zh-CN.md](LOG.zh-CN.md)
+最新在前。一次会话一条：钉了什么、读了什么、读出了什么。
 
-Newest first. One entry per session: what was pinned or read, and what came out
-of it.
+2026-08-30 —— 四问地图：读四个位置之后
+
+按 map.md 的四个位置各读了前后 50 行，写下理解，参谋位逐条纠正。
+
+1. 循环
+
+我说：run 就是 agent loop，里面有退出情况——loop 执行完成，以及各种错误处理情况。
+
+纠正：方向对，但"各种退出情况"这个说法会把最要紧的设计盖住。这个循环只认一件事：最后一条消息的 role 是不是 exit（mini-swe-agent@25941c89:src/minisweagent/agents/default.py:122）。所有你以为的"退出情况"——预算到了、口令出现了、连续三次格式错误——没有一个是直接跳出循环的，它们做的都是同一件事：往 messages 末尾追加一条 role 为 exit 的消息，然后由 122 行那一个判断收口。三条异常分支各自只负责"追加什么"：FormatError 分支（mini-swe-agent@25941c89:src/minisweagent/agents/default.py:100-114）先把这次调用记账（格式错了也要付钱），再数连续次数，没到上限就把模型的坏输出和一条解释错误的 user 消息一起追加、继续转，到了上限才追加 exit；InterruptAgentFlow 分支（mini-swe-agent@25941c89:src/minisweagent/agents/default.py:115-116）把异常自带的消息原样追加，带不带 exit 由抛出者决定；其余异常（mini-swe-agent@25941c89:src/minisweagent/agents/default.py:117-119）追加一条带 traceback 的 exit 消息后重新抛出——这是唯一不经过 122 行、被异常直接打断的出口。还有一句被忽略的：finally 里每圈都落盘一次（mini-swe-agent@25941c89:src/minisweagent/agents/default.py:120-121），不管这圈是正常、格式错还是被中断。另外"loop 执行完成"这个概念在循环里不存在——循环自己不知道什么叫完成，完成是环境认口令之后用一条 exit 消息告诉它的。
+
+2. 校验与执行
+
+我说：parse_toolcall_actions 校验模型输出的工具调用——是否存在工具、是否存在参数，有问题就重新包装成一条 user 消息返回给模型让它解决。execute 是执行工具，里面判断模型是否已确定执行完成，决定退出 loop。
+
+纠正：前半句对，补一个位置和一个后果。校验发生在模型层，不在 agent 里：litellm_model 拿到接口响应后立刻解析（mini-swe-agent@25941c89:src/minisweagent/models/litellm_model.py:89），四道关——一个工具调用都没有（mini-swe-agent@25941c89:src/minisweagent/models/utils/actions_toolcall.py:40）、工具名不是 bash（mini-swe-agent@25941c89:src/minisweagent/models/utils/actions_toolcall.py:61）、参数不是 dict 或没有 command（mini-swe-agent@25941c89:src/minisweagent/models/utils/actions_toolcall.py:63）、任一不过就抛 FormatError（mini-swe-agent@25941c89:src/minisweagent/models/utils/actions_toolcall.py:66）。agent 的 query() 拿到的消息已经带着校验过的 extra.actions。把校验放在模型层的后果：换一种模型接法（文本模式用正则抠命令）校验方式跟着换，而 agent 循环一行不动——校验是模型适配器的责任，不是循环的责任。
+
+后半句要改两处。一，execute 不判断"模型是否确定完成"，它判断的是"命令输出的第一行是不是口令、返回码是不是 0"（mini-swe-agent@25941c89:src/minisweagent/environments/local.py:48）——看的是输出，不是模型的意图。模型没有任何字段能表达"我完成了"，它只能让一条命令打印出那个字符串。二，execute 不决定退出，它只抛 Submitted（mini-swe-agent@25941c89:src/minisweagent/environments/local.py:50），Submitted 自带一条 exit 消息，退出仍然是第 1 条里那一行判断做的。环境能触发结束，但不拥有结束。
+
+3. 落盘
+
+我问：不太懂这里的落盘，是把整个 trace 整体存储吗？
+
+解释：是，而且比"整体存储"更极端——每一圈之后把整个东西从头重写一遍。save（mini-swe-agent@25941c89:src/minisweagent/agents/default.py:182-190）调 serialize（mini-swe-agent@25941c89:src/minisweagent/agents/default.py:159-180），后者把配置、模型统计、退出状态、提交内容和完整的 messages 列表拼成一个 dict，整个 json.dumps 后覆盖写到 output_path。它在第 1 条说的 finally 里被调，所以每圈都写一次，写的是当前全量。三个后果：文件在任何时刻都等于"上一圈结束时的完整状态"，中途被 kill 也只丢最后一圈；写的量随圈数线性涨、总写入量平方涨，这里六圈无所谓，几百圈就不无所谓；它是快照不是日志——只有"现在是什么样"，没有"发生了什么"，看不出哪一圈改了什么。DeepSeek Harness 那种追加式事件日志是反过来的：每个事件写一次、从不重写。这会是矩阵里"持久独占：落盘方式"那一行的第一处差别。
+
+4. 异常文件
+
+我问：没太看懂作用，是什么时候会触发 agent 终止吗？
+
+解释：这个文件定义的是"带着消息的异常"，它们是这个 harness 的控制流工具，不都是终止。基类 InterruptAgentFlow 的约定是：构造时塞进一条或多条消息，被循环接住后消息原样追加。它的三个子类各对应一个抛出者：Submitted（mini-swe-agent@25941c89:src/minisweagent/exceptions.py:9）由环境在认出口令时抛，消息以 exit 结尾；LimitsExceeded（mini-swe-agent@25941c89:src/minisweagent/exceptions.py:13）由 query() 在调模型之前抛，步数或花费到了（mini-swe-agent@25941c89:src/minisweagent/agents/default.py:132-139）；TimeExceeded（mini-swe-agent@25941c89:src/minisweagent/exceptions.py:17）是它的子类，墙钟到了（mini-swe-agent@25941c89:src/minisweagent/agents/default.py:140-147）。FormatError 单独一支，因为它要记账、要计数。所以"什么时候终止"的完整答案是：当且仅当一条 role 为 exit 的消息成为最后一条——它可以来自环境的口令、来自调模型前的预算检查、来自循环自己数到第三次格式错误、来自任何未捕获的异常；四个来源，一个出口。
+
+这个层次结构的作用在 InteractiveAgent 里才看得出来：它在异常到达循环之前按子类拦截——TimeExceeded 在 mini-swe-agent@25941c89:src/minisweagent/agents/interactive.py:75 接住，LimitsExceeded 在 mini-swe-agent@25941c89:src/minisweagent/agents/interactive.py:80 接住并当场让用户抬高上限，Submitted 在 mini-swe-agent@25941c89:src/minisweagent/agents/interactive.py:133 接住先问用户要不要提交——拦下来就不终止，放行就终止。基类用一个 except 统一处理，子类给中间层留拦截点，这就是为什么要分成一棵树而不是一个异常。Go 里对应的是错误类型链加 errors.As：顶层统一处理，中间层按类型拦。
 
 2026-08-29 —— 第一条轨迹：八问八答，外加一问
 自己读了 study/mini-swe-agent/trace/mini.traj.json 后逐题手答，参谋位逐条纠正。每题先是我的回答，再是纠正与解释。
@@ -42,51 +71,23 @@ of it.
 * 持久：每一步之后在 finally 里整份重写 traj.json；只记对话，不记判断。
 * 续行：三种上限在调模型之前查；连续格式错误 3 次由循环自己写 exit；停止只看最后一条消息的 role；模型无法直接停。
 
-## 2026-08-29 — card 00, scaffold
+## 2026-08-29 —— 卡 00，脚手架
 
-Built the repository skeleton and the mechanism the rest of it depends on.
+搭起仓库骨架，以及其余部分所依赖的那套机制。
 
-- Directory conventions: `repos/` for pinned targets, `study/<repo>/` for
-  per-repository artifacts, `points/` for technical points, `scripts/` for
-  tooling, plus `matrix.md` and this log.
-- Anchor checking: `scripts/check_anchors.py` reads `path:line` references and
-  commit hashes out of the artifacts and proves each one resolves at the commit
-  its target repository is pinned to. `make check` is the one command.
-- Pinning: `repos/pins.tsv` plus `scripts/pin.sh`. Full clones, `HEAD` detached
-  at the pinned commit, history retained on purpose — see `repos/README.md`.
-- Demonstrated the pin with mini-swe-agent at
-  `mini-swe-agent@25941c89cfbc91eb40b3f8756348c91d9977d57e` — 1020 commits
-  reachable from the pin, 1489 across all refs in the clone. Confirmed that
-  `git log -S`, `git log -L` and `git blame` all answer offline against the
-  clone, including across the `microsweagent` → `minisweagent` rename.
-- Seeded `study/mini-swe-agent/00-pin-demo.md` (15 verified anchors) and
-  `points/001-control-flow-via-exceptions.md` so the conventions have a worked
-  example rather than only a specification.
+- **目录约定**：`repos/` 放钉住的目标仓库，`study/<repo>/` 放单仓库产物，`points/` 放技术点，`scripts/` 放工具，外加 `matrix.md` 与本日志。
+- **锚点校验**：`scripts/check_anchors.py` 从产物里读出 `路径:行号` 引用与提交哈希，逐条证明它们在目标仓库的钉住提交上仍能解析。`make check` 是那一条命令。
+- **钉住机制**：`repos/pins.tsv` 加 `scripts/pin.sh`。全量克隆，`HEAD` detach 在钉住提交上，刻意保留历史——理由见 `repos/README.zh-CN.md`。
+- 用 mini-swe-agent 做了演示，钉在 `mini-swe-agent@25941c89cfbc91eb40b3f8756348c91d9977d57e`——从 pin 可达 1020 个提交，克隆里所有 ref 共 1489 个。确认 `git log -S`、`git log -L` 和 `git blame` 都能离线对着克隆作答，包括跨 `microsweagent` → `minisweagent` 的改名。
+- 播下 `study/mini-swe-agent/00-pin-demo.md`（15 条已校验锚点）与 `points/001-control-flow-via-exceptions.md`，让约定有一个实做的样例，而不只是一份规格。
 
-Then ran an adversarial review over the scaffold — six dimensions, each finding
-independently re-derived by a skeptic told to refute it. 18 findings survived.
-The two that mattered:
+随后对脚手架跑了一轮**对抗式审查**——六个维度，每条发现都由一个被要求证伪它的怀疑者独立复现。18 条成立。真正要紧的两条：
 
-- **The checker could fail open.** Fence tracking normalised every opening fence
-  to three characters, so a longer fence quoting a shorter one — the ordinary
-  way to write about fence syntax, and unavoidable when the subject is a harness
-  whose action protocol *is* a fenced block — desynced the scanner and swallowed
-  the rest of the file. A deliberately wrong anchor after that point exited 0.
-  Fixed by tracking the opener verbatim, plus a backstop: an unclosed fence is
-  now reported rather than silently skipping to EOF.
-- **The prose was wrong while every anchor resolved.** `points/001` claimed a
-  raise site decides that a run stops. It does not: it decides only what the
-  transcript records, and 6 of 15 control-flow raise sites carry `role: "user"`
-  and do not stop anything. Worse, the note asserted the semantics that
-  `mini-swe-agent@10dfc4ea` — the commit it cites as the reversal — removed.
-  Rewritten, and the limitation is now stated in the README: an anchor proves a
-  location, never a claim.
+- **校验器会 fail-open。** 围栏跟踪把每个开围栏归一化成三个字符，于是"长围栏包短围栏"——写围栏语法时的常规做法，而当研读对象的动作协议本身**就是**一个围栏块时更是躲不开——会让扫描器失步并吞掉文件剩余部分。位于其后的故意写错的锚点退出码为 0。修法是原样保留开围栏标记，外加一道兜底：未闭合的围栏现在会被报出来，而不是静默跳到文件末尾。
+- **锚点全部通过，而论断是错的。** `points/001` 声称抛出点决定一次运行是否停止。并非如此：它只决定对话记录里写什么，而 15 个控制流抛出点里有 6 个带 `role: "user"`，什么也不停。更糟的是，这篇笔记断言的正是 `mini-swe-agent@10dfc4ea`——它自己引用为"那次反转"的提交——所**移除**掉的语义。已重写，并把这条局限写进了 README：锚点证明位置，从不证明论断。
 
-Also fixed: `pin.sh` recorded an annotated tag's tag object instead of its
-commit (permanent phantom "drifted"), and silently pinned the remote's HEAD when
-a ref failed to resolve — both silent wrong-pin bugs in a tool whose only job is
-pinning. The selftest grew from 15 assertions to 31 and now asserts *how much*
-was scanned, not just the codes; 10 of 10 deliberate mutations of the checker
-are caught, where the count-blind version missed one.
+同时修掉的：`pin.sh` 会把 annotated tag 的 tag 对象而不是 commit 记进 pin（导致永久性的假 `drifted`），以及 ref 解析失败时静默回退到远端 HEAD——对一个唯一职责就是"钉住"的工具来说，这是两个静默钉错的缺陷。自测从 15 条断言长到 31 条，现在还断言**实际扫了多少**而不只是错误码；对校验器做的 10 次故意变异全部被抓到，而缺少计数断言的版本会漏掉其中一次。
 
-Carried forward: points 002–005 in `matrix.md` are unread.
+- 补齐全部阅读文档的中文版（`*.zh-CN.md`）。`study/` 与 `points/` 下的中文笔记与英文笔记走同一套锚点校验，`matrix.zh-CN.md` 和 `LOG.zh-CN.md` 也已加入默认扫描目标。
+
+后续待办：`matrix.md` 里的技术点 002–005 尚未阅读。
