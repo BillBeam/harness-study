@@ -1,18 +1,15 @@
 # study/
 
-> 中文：[README.zh-CN.md](README.zh-CN.md)
+每个钉住的目标仓库一个目录：`study/<repo>/`，名字与 `repos/pins.tsv` 的 `name` 列一致。
 
-One directory per pinned target repository: `study/<repo>/`, matching the `name`
-column of `repos/pins.tsv`.
-
-Inside, one Markdown file per topic, numbered so the reading order is obvious:
+目录里一个主题一个 Markdown 文件，编号让阅读顺序一目了然：
 
 ```
 study/mini-swe-agent/00-pin-demo.md
 study/mini-swe-agent/01-control-flow.md
 ```
 
-Every file starts with front matter naming the pin it was read against:
+每个文件以 front matter 开头，写明它是对着哪个 pin 读的：
 
 ```markdown
 ---
@@ -22,30 +19,12 @@ title: how a run terminates
 ---
 ```
 
-`repo` and `commit` are checked by `make check`; anything else is free.
+`repo` 和 `commit` 会被 `make check` 校验；其余字段随意。
 
-Write anchors as you read, so a later reader can jump straight to the code
-instead of re-deriving where it lives:
+边读边写锚点，好让后来的读者能直接跳到代码，而不必重新推导它在哪：
 
 ```markdown
-The retry loop is `src/minisweagent/models/litellm_model.py:82`.
+重试循环是 `src/minisweagent/models/litellm_model.py:82`。
 ```
 
-The full anchor syntax is documented in the root `README.md`.
-
-## Chinese and English
-
-A translation sits beside its original with a `.zh-CN` suffix:
-
-```
-study/mini-swe-agent/00-pin-demo.md
-study/mini-swe-agent/00-pin-demo.zh-CN.md
-```
-
-Both are scanned by `make check`, and their anchors are treated alike. **A
-translation is therefore not a second-class copy** -- its anchors have to stand
-on their own, and a line number moved or a hash mistyped in translation fails
-the check.
-
-A translation carries `lang: zh-CN` in its front matter and a link back to the
-original as its first line; the original links forward the same way.
+完整的锚点语法见根目录 [`README.md`](../README.md)。

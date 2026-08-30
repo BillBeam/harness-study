@@ -77,7 +77,7 @@
 
 - **目录约定**：`repos/` 放钉住的目标仓库，`study/<repo>/` 放单仓库产物，`points/` 放技术点，`scripts/` 放工具，外加 `matrix.md` 与本日志。
 - **锚点校验**：`scripts/check_anchors.py` 从产物里读出 `路径:行号` 引用与提交哈希，逐条证明它们在目标仓库的钉住提交上仍能解析。`make check` 是那一条命令。
-- **钉住机制**：`repos/pins.tsv` 加 `scripts/pin.sh`。全量克隆，`HEAD` detach 在钉住提交上，刻意保留历史——理由见 `repos/README.zh-CN.md`。
+- **钉住机制**：`repos/pins.tsv` 加 `scripts/pin.sh`。全量克隆，`HEAD` detach 在钉住提交上，刻意保留历史——理由见 `repos/README.md`。
 - 用 mini-swe-agent 做了演示，钉在 `mini-swe-agent@25941c89cfbc91eb40b3f8756348c91d9977d57e`——从 pin 可达 1020 个提交，克隆里所有 ref 共 1489 个。确认 `git log -S`、`git log -L` 和 `git blame` 都能离线对着克隆作答，包括跨 `microsweagent` → `minisweagent` 的改名。
 - 播下 `study/mini-swe-agent/00-pin-demo.md`（15 条已校验锚点）与 `points/001-control-flow-via-exceptions.md`，让约定有一个实做的样例，而不只是一份规格。
 

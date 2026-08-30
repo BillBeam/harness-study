@@ -1,44 +1,22 @@
 # points/
 
-> 中文：[README.zh-CN.md](README.zh-CN.md)
-
-One file per **technical point**: an idea worth understanding on its own, which
-usually shows up in more than one harness. `study/` is organised by repository;
-`points/` is organised by idea, and the two cross-reference each other through
-`matrix.md`.
+一个**技术点**一个文件：一个值得单独理解的想法，而且通常不止在一个 harness 里出现。`study/` 按仓库组织，`points/` 按想法组织，两者通过 `matrix.md` 互相索引。
 
 ```
 points/001-control-flow-via-exceptions.md
-points/002-<next idea>.md
+points/002-<下一个想法>.md
 ```
 
-A point file compares how different repositories solve the same problem, so it
-generally has no single pinned repository in front matter. Use the explicit
-anchor form, which names its own repository and commit:
+技术点文件比较的是不同仓库如何解决同一个问题，因此通常没有单一的钉住仓库可写进 front matter。用**显式锚点形式**，它自带仓库与提交：
 
 ```markdown
 `mini-swe-agent@25941c89cfbc91eb40b3f8756348c91d9977d57e:src/minisweagent/exceptions.py:4`
 ```
 
-A point should say what the problem is, how each repository answers it, and what
-the trade-off is — not just where the code lives.
+一篇技术点该说清楚：**问题是什么、各个仓库怎么回答、代价在哪**——而不只是代码在哪。代码在哪是锚点的活。
 
-## Two things learned writing these
+## 写法上的两条经验
 
-**A point is not a point until it compares.** A file covering one repository is
-a reading note. The value starts compounding at the second and third column --
-so the empty cells in `matrix.md` are not decoration on a todo list, they are
-the shape of the work.
+**先有对比，才叫技术点。** 只覆盖一个仓库的文件本质上还是读书笔记。技术点的价值在第二列、第三列出现之后才开始累积——所以 `matrix.md` 里的空格子不是待办的装饰，它们就是这个仓库的骨架。
 
-**Write claims that can be refuted.** An anchor proves you pointed at the right
-place; it cannot prove you said the right thing. Every anchor in the first draft
-of `points/001` resolved, while its central claim described the semantics that
-the very commit it cited had *removed*. Ground a claim in specific behaviour --
-a branch, the value of a role field, the difference either side of a commit --
-rather than stopping at a restatement of the code's structure.
-
-## Chinese and English
-
-A translation sits beside its original with a `.zh-CN` suffix, carries
-`lang: zh-CN` in its front matter, and is scanned by `make check` like any other
-artifact.
+**论断要能被反驳。** 锚点保证你指对了地方，保证不了你说对了话。`points/001` 的第一版里所有锚点都解析通过，而它的核心论断恰恰描述了被引用那次提交所**移除**的语义。写技术点时，把"我凭什么这么说"落到具体的行为上——某个分支、某个 role 的取值、某次提交前后的差异——而不是停在对代码结构的复述上。

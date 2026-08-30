@@ -8,8 +8,8 @@
 #            looked" -- a case whose point is that something IS scanned (or is
 #            NOT) has to pin the count too, or a regression to silence passes.
 #
-# A row may name a directory (e.g. `pair`) when the case is about how two
-# files relate rather than one file on its own.
+# A row may name a directory when the case is about how two files relate
+# rather than one file on its own.
 #
 # scripts/selftest.sh asserts these exactly, and also fails if a file in
 # tests/cases/ has no row here. A case file is a deliberately broken artifact;
@@ -35,7 +35,6 @@ link-unpinned-ref.md	1	unpinned-ref	anchors=1
 missing-commit.md	1	missing-commit	-
 no-repo.md	1	no-repo	-
 no-such-file.md	1	no-such-file	-
-pair	1	translation-drift	files=2 anchors=3
 stale-commit.md	1	stale-commit	-
 unknown-commit.md	1	unknown-commit	-
 unknown-repo.md	1	unknown-repo unknown-repo	-
