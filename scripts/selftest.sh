@@ -103,6 +103,24 @@ echo "== the real default run =="
 run_case "default targets are scanned"   0 "-" "files>=5 anchors>=20"
 run_raw  "make check path exits 0"       0
 
+# A default target that does not exist yet is deliberately not an error -- study/
+# and points/ may not exist on a fresh checkout. That tolerance also means a
+# *dead* entry (a file that was renamed or deleted) sits in the list forever,
+# scanning nothing and reporting nothing. So lint the list itself: every
+# root-level file named in DEFAULT_TARGETS has to be a file that exists.
+# Directories stay exempt, since those are the ones allowed to appear later.
+dead="$(python3 -c '
+import sys
+from pathlib import Path
+sys.path.insert(0, "'"$ROOT"'/scripts")
+import check_anchors
+root = Path("'"$ROOT"'")
+print(" ".join(t for t in check_anchors.DEFAULT_TARGETS
+                if not (root / t).is_dir() and not (root / t).is_file()))
+' 2>/dev/null)"
+if [ -z "$dead" ]; then ok "DEFAULT_TARGETS has no dead entries"
+else bad "DEFAULT_TARGETS has no dead entries" "these are named but do not exist: $dead"; fi
+
 echo "== recursion and aggregation =="
 run_case "nested dirs, counts aggregate" 0 "-" "files=2 anchors=2" "$ROOT/tests/fixtures/tree"
 
