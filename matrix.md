@@ -109,5 +109,6 @@
 | 名称 | 上游 | 钉住提交 | 笔记 |
 | --- | --- | --- | --- |
 | mini-swe-agent | SWE-agent/mini-swe-agent | `mini-swe-agent@25941c89cfbc91eb40b3f8756348c91d9977d57e` | [study/mini-swe-agent](study/mini-swe-agent/) |
+| deepseek-harness | deepseek-ai/deepseek-harness | `deepseek-harness@cd5ef8148158c3a752a658978873241fdf8e2bbc` | [study/deepseek-harness](study/deepseek-harness/) |
 
 pin 以 `repos/pins.tsv` 为准，本表是给人读的副本。
