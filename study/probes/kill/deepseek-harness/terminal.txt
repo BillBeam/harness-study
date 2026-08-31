@@ -1,0 +1,102 @@
+=== 探针复跑记录 ===
+probe       : kill
+repo        : deepseek-harness
+date        : 2026-08-31T07:26:25Z
+api key     : 取自环境变量 XAI_API_KEY（已设置，不入库）
+wrapper 兜底: 墙钟 480 秒 / 步数 40 步
+
+=== 1. pin ===
+deepseek-harness @ cd5ef8148158c3a752a658978873241fdf8e2bbc
+dsh         : 0.1.2-alpha.1
+
+=== 2. 铺工作副本 ===
+work dir    : /home/user/harness-study/.dsh-run/probe-kill/workspace
+README.md
+slow_check.sh
+stats.py
+test_stats.py
+
+--- 跑之前的测试 ---
++ [3.0]
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+FAILED (failures=2)
+
+=== 3. patch ===
+
+--- 这一次的 patch 覆盖层 ---
+# 由 study/probes/wrapper.sh 为探针 kill 生成，不要手改。
+
+- id: llm-pi-ai
+  config:
+    providers:
+      xai:
+        apiKeyEnv: XAI_API_KEY
+
+- id: agent-default-model
+  config:
+    provider: xai
+    model: grok-4.3
+
+- id: session-persistence-jsonl
+  config:
+    root: !!js dshHomePath('sessions')
+    compression: none
+
+=== 4. 跑 deepseek-harness ===
+[wrapper] harness pid = 3643
+(node:3643) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+dsh: reasoning:
+The task is: There's a small Python repo with four files: implementation of moving average, its unittest tests, a slow script for baseline, and this description.
+dsh: reasoning:
+The workspace contains four files: stats.py, slow_check.sh, README.md, and test_stats.py. I need to follow the instructions strictly: first run `bash slow_check.sh` to collect a baseline (it takes abo...
+
+[wrapper] 看到 .probe-running，工具正在执行中；再等 4 秒让它跑进去
+[wrapper] 杀之前 pid 3643 的子进程：3687 
+[wrapper] kill -9 3643
+study/probes/wrapper.sh: line 235:  3643 Killed                  ( cd "$WORK" && exec env -i PATH="$(dirname "$(command -v node)"):/usr/local/bin:/usr/bin:/bin" HOME="$RUN_ROOT/fakehome" COLUMNS=120 NODE_USE_ENV_PROXY=1 DSH_HOME="$DSH_HOME_DIR" DSH_TELEMETRY_DISABLED=1 DSH_PERMISSION_MODE=danger-full-access "$KEY_VAR=$KEY" "${env_args[@]}" node "$DSH_UP/apps/cli/lib/bin.js" --profile headless --patch "$PATCH" "$(cat "$TASK_DIR/README.md")" < /dev/null )
+[wrapper] 收落单的子进程
+
+[wrapper] harness 退出码 137
+[wrapper] 停下它的是：外部 wrapper：kill -9（工具执行进行中）
+
+=== 5. 到第几步 ===
+各家自己的记录里数出来的步数：1
+
+=== 6. 工作副本被改成什么样 ===
+
+--- 未跟踪的新文件 ---
+?? .probe-running
+?? __pycache__/stats.cpython-311.pyc
+?? __pycache__/test_stats.cpython-311.pyc
+
+=== 7. 跑之后的测试 ===
+
+======================================================================
+FAIL: test_window_equal_to_length (test_stats.MovingAverageTest.test_window_equal_to_length)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/user/harness-study/.dsh-run/probe-kill/workspace/test_stats.py", line 15, in test_window_equal_to_length
+    self.assertEqual(moving_average([2, 4], 2), [3.0])
+AssertionError: Lists differ: [] != [3.0]
+
+Second list contains 1 additional elements.
+First extra element 0:
+3.0
+
+- []
++ [3.0]
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.002s
+
+FAILED (failures=2)
+
+=== 8. 记录文件 ===
+   45958  sessions/--home-user-harness-study-.dsh-run-probe-kill-workspace--/session-54f2edac-8d54-45e5-9c8d-df1309264729/session.jsonl
+
+=== 9. 上游 checkout 是否被改动 ===
+clean

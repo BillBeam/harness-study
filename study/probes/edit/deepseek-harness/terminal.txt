@@ -1,0 +1,101 @@
+=== 探针复跑记录 ===
+probe       : edit
+repo        : deepseek-harness
+date        : 2026-08-31T07:24:28Z
+api key     : 取自环境变量 XAI_API_KEY（已设置，不入库）
+wrapper 兜底: 墙钟 480 秒 / 步数 40 步
+
+=== 1. pin ===
+deepseek-harness @ cd5ef8148158c3a752a658978873241fdf8e2bbc
+dsh         : 0.1.2-alpha.1
+
+=== 2. 铺工作副本 ===
+work dir    : /home/user/harness-study/.dsh-run/probe-edit/workspace
+README.md
+feed.py
+test_feed.py
+
+--- 跑之前的测试 ---
+AssertionError: 10 != 50
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+FAILED (failures=1)
+
+=== 3. patch ===
+
+--- 这一次的 patch 覆盖层 ---
+# 由 study/probes/wrapper.sh 为探针 edit 生成，不要手改。
+
+- id: llm-pi-ai
+  config:
+    providers:
+      xai:
+        apiKeyEnv: XAI_API_KEY
+
+- id: agent-default-model
+  config:
+    provider: xai
+    model: grok-4.3
+
+- id: session-persistence-jsonl
+  config:
+    root: !!js dshHomePath('sessions')
+    compression: none
+
+=== 4. 跑 deepseek-harness ===
+[wrapper] harness pid = 2970
+(node:2970) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+dsh: reasoning:
+The task is: There's a small Python repo with three files: two functions for fetching entries, their unittest tests, and this description.
+dsh: reasoning:
+The workspace has three main files: feed.py, README.md, and test_feed.py. I need to examine feed.py and test_feed.py.
+dsh: reasoning:
+The task is to change only the `limit = 10` in `parse_recent` to `limit = 50`, leaving the one in `parse_archive` as is. Then run the tests to confirm they pass.
+dsh: reasoning:
+Now run the tests to verify.
+dsh: reasoning:
+Done. Both tests pass.
+Tests pass. (Only `parse_recent`'s `limit = 10` changed to `limit = 50`; `parse_archive` untouched.)
+
+[wrapper] harness 退出码 0
+[wrapper] 停下它的是：harness 自己退出（退出码 0），wrapper 的两条兜底都没用上
+
+=== 5. 到第几步 ===
+各家自己的记录里数出来的步数：5
+
+=== 6. 工作副本被改成什么样 ===
+diff --git a/feed.py b/feed.py
+index 58d4de6..87c8e23 100644
+--- a/feed.py
++++ b/feed.py
+@@ -3,7 +3,7 @@
+ 
+ def parse_recent(entries):
+     """返回最近的一批条目。"""
+-    limit = 10
++    limit = 50
+     return list(entries)[:limit]
+ 
+ 
+
+--- 未跟踪的新文件 ---
+?? __pycache__/feed.cpython-311.pyc
+?? __pycache__/test_feed.cpython-311.pyc
+
+=== 7. 跑之后的测试 ===
+test_archive_still_takes_ten (test_feed.FeedTest.test_archive_still_takes_ten) ... ok
+test_recent_takes_fifty (test_feed.FeedTest.test_recent_takes_fifty) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+OK
+
+=== 8. 记录文件 ===
+   62766  sessions/--home-user-harness-study-.dsh-run-probe-edit-workspace--/session-cd81defc-c78e-4bf9-8cdd-4d3a7adfcb2d/session.jsonl
+
+=== 9. 上游 checkout 是否被改动 ===
+clean
