@@ -34,5 +34,9 @@ jobs:
       - name: 校验锚点
         run: make check
 
+      # 锚点绿只说明写下来的引用还解析得通，说不了漏掉了什么；这一步查的是漏。
+      - name: 校验普查覆盖
+        run: make coverage
+
       - name: 自检校验器
         run: make selftest

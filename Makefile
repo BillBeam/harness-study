@@ -6,7 +6,7 @@
 PYTHON ?= python3
 VARIANT ?= default
 
-.PHONY: help check check-v selftest sync status run run-dsh
+.PHONY: help check check-v coverage coverage-v selftest sync status run run-dsh
 
 help:  ## show this help
 	@grep -hE '^[a-z-]+:.*?##' $(MAKEFILE_LIST) | sort | \
@@ -17,6 +17,12 @@ check:  ## verify every anchor in study/ and points/ against the pins
 
 check-v:  ## same, listing every anchor found
 	@$(PYTHON) scripts/check_anchors.py -v
+
+coverage:  ## prove each census covers every file it should, exactly once
+	@$(PYTHON) scripts/census_coverage.py
+
+coverage-v:  ## same, breaking the scope down by kind and by why files were dropped
+	@$(PYTHON) scripts/census_coverage.py -v
 
 selftest:  ## prove the checker itself still detects each failure mode
 	@scripts/selftest.sh
