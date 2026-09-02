@@ -38,6 +38,22 @@
 
 ---
 
+## opencode（run 模式）
+
+记录：[终端全文](opencode/terminal.txt) ｜ [数据目录](opencode/data/)（库、日志、快照 git 目录）｜ [会话导出](opencode/session.export.json)
+
+**发生了什么。** 第 1 步模型没有直接跑 `python3 gen.py`，而是 `python3 gen.py | awk 'NR==1{first=$0} END{print first; print}'`——只让首行和末行到达工具输出。这一条 `tool` 片段的 `output` 是 32 个字符、两行：`开头令牌：ALPHA-7391`、`结尾令牌：OMEGA-5520`；`metadata.truncated` 是 `false`。第 2 步 `printf 'ALPHA-7391\nOMEGA-5520\n' > answer.txt`；第 3 步回话「Done.」。34352 个字符的原文这一次**没有进过任何一条工具输出**，也没有落在库里——被 awk 在管道里丢掉了。
+
+opencode 自己对工具输出的上限这一次没有被问到：bash 工具的输出默认在 2000 行或 50 KiB 处截尾、把全文另存到文件并在输出前加一行 `...output truncated...` 与文件路径（[truncate.ts:14-15](https://github.com/anomalyco/opencode/blob/774cc7c1914e4329eefde5a669f938b0cf566661/packages/opencode/src/tool/truncate.ts#L14-L15)、[shell.ts:569-579](https://github.com/anomalyco/opencode/blob/774cc7c1914e4329eefde5a669f938b0cf566661/packages/opencode/src/tool/shell.ts#L569-L579)）；702 行、34352 字符都在上限之内，就算原样跑也不会被截。
+
+**步数。** 库里 `step-start` 片段 3 条。整轮从 user 消息建立到最后一条 assistant 完成约 21 秒。
+
+**记录文件的最终状态。** 库里 1 行 `session`、4 行 `message`、14 行 `part`（`step-start` 3、`reasoning` 3、`tool` 2、`text` 2、`step-finish` 3、`patch` 1——`patch` 记的是第 2 步新建的 `answer.txt`）；最后一条 assistant 的 `finish` 是 `stop`。日志 39 行。导出 16056 字节。
+
+`answer.txt` 两行，ALPHA-7391 与 OMEGA-5520，与任务要求一致。
+
+---
+
 ## 卡外发现
 
 - **两家都有一个"一万字符上下"的数，但这两个数管的不是同一件事。** mini 的 10000 是**每条 observation 的硬闸**，写在提示词模板里，每次拼消息都走一遍，超了就地掐掉、原文不留。dsh 的 8192 是**压缩里的一份预算**，只有当压缩因为上下文压力或溢出而启动时才轮到它。同一条 34352 字符的输出，一边当场被截成 10000，一边整条进上下文。

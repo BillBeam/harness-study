@@ -1,0 +1,157 @@
+=== 探针复跑记录 ===
+probe       : edit
+repo        : opencode
+date        : 2026-09-02T03:15:21Z
+api key     : 取自环境变量 XAI_API_KEY（已设置，不入库）
+wrapper 兜底: 墙钟 480 秒 / 步数 40 步
+
+=== 1. pin ===
+
+added 3 packages in 13s
+opencode @ 774cc7c1914e4329eefde5a669f938b0cf566661
+opencode --version : 1.18.26（= pin 处 packages/opencode/package.json 的 version）
+
+=== 2. 铺工作副本 ===
+work dir    : /home/user/harness-study/.dsh-run/probe-edit/workspace
+README.md
+feed.py
+test_feed.py
+
+--- 跑之前的测试 ---
+AssertionError: 10 != 50
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.001s
+
+FAILED (failures=1)
+
+=== 3. opencode 的续跑入口 ===
+--- opencode run --help 里所有带 continue / session 的行 ---
+  -c, --continue     continue the last session                                             [boolean]
+  -s, --session      session id to continue                                                 [string]
+      --fork         fork the session before continuing (requires --continue or --session) [boolean]
+      --share        share the session                                                     [boolean]
+      --title        title for the session (uses truncated prompt if no value provided)     [string]
+
+=== 4. 跑 opencode ===
+[wrapper] harness pid = 2732
+[0m
+> build · grok-4.3
+[0m
+[0m✱ [0mGlob "**/*"[90m 5 matches[0m
+[0m→ [0mRead feed.py
+[0m→ [0mRead test_feed.py
+[0m
+[0m← [0mEdit feed.py
+Index: /home/user/harness-study/.dsh-run/probe-edit/workspace/feed.py
+===================================================================
+--- /home/user/harness-study/.dsh-run/probe-edit/workspace/feed.py
++++ /home/user/harness-study/.dsh-run/probe-edit/workspace/feed.py
+@@ -2,9 +2,9 @@
+ 
+ 
+ def parse_recent(entries):
+     """返回最近的一批条目。"""
+-    limit = 10
++    limit = 50
+     return list(entries)[:limit]
+ 
+ 
+ def parse_archive(entries):
+
+[0m
+[0m$ [0mpython3 -m unittest -v
+test_archive_still_takes_ten (test_feed.FeedTest.test_archive_still_takes_ten) ... ok
+test_recent_takes_fifty (test_feed.FeedTest.test_recent_takes_fifty) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+OK
+[0m
+Done.
+
+[wrapper] harness 退出码 0
+[wrapper] 停下它的是：harness 自己退出（退出码 0），wrapper 的两条兜底都没用上
+
+=== 5. 到第几步 ===
+各家自己的记录里数出来的步数：6
+
+=== 6. 工作副本被改成什么样 ===
+diff --git a/feed.py b/feed.py
+index 58d4de6..87c8e23 100644
+--- a/feed.py
++++ b/feed.py
+@@ -3,7 +3,7 @@
+ 
+ def parse_recent(entries):
+     """返回最近的一批条目。"""
+-    limit = 10
++    limit = 50
+     return list(entries)[:limit]
+ 
+ 
+
+--- 未跟踪的新文件 ---
+?? __pycache__/feed.cpython-311.pyc
+?? __pycache__/test_feed.cpython-311.pyc
+
+=== 7. 跑之后的测试 ===
+test_archive_still_takes_ten (test_feed.FeedTest.test_archive_still_takes_ten) ... ok
+test_recent_takes_fifty (test_feed.FeedTest.test_recent_takes_fifty) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+OK
+
+=== 8. 记录文件 ===
+   12130  data/log/opencode.log
+  352256  data/opencode.db
+      23  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/HEAD
+     319  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/config
+      73  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/description
+     478  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/applypatch-msg.sample
+     896  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/commit-msg.sample
+    4726  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/fsmonitor-watchman.sample
+     189  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/post-update.sample
+     424  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/pre-applypatch.sample
+    1643  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/pre-commit.sample
+     416  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/pre-merge-commit.sample
+    1374  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/pre-push.sample
+    4898  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/pre-rebase.sample
+     544  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/pre-receive.sample
+    1492  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/prepare-commit-msg.sample
+    2783  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/push-to-checkout.sample
+    2308  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/sendemail-validate.sample
+    3650  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/hooks/update.sample
+     772  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/index
+     240  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/info/exclude
+     195  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/objects/87/c8e23f967c1041c755a28a3b5a5c816613a33d
+     153  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/objects/8a/9ceae30548eced7c558d8067d491d42b69a37e
+     154  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/objects/b4/2f625fd39b1706f71c5c9fe142f2f0fcaa0be6
+     512  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/objects/c5/bc83ea7763892887aa7061cd8a33d8265e65ab
+      96  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/objects/c6/bac7acdab216debca85d8ce43e4cb7cac5001f
+     154  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/objects/e3/5dde7a1b6f17628544a901b4d81a3d41dadf43
+     814  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/objects/ed/cc690bf711362b800547c9cc7a3c9b7f5c2fc1
+     512  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/objects/ef/b52520ccf59ae5285e50e6723946dbfc3ac14c
+      96  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/objects/f8/bb3c223aad731b746b934e27616d3866b5e42e
+      68  data/snapshot/3960f18399c382483f4ad44f896936bb611ded5d/cf188ac5538dc6d942b0eca6c5a392de5519f3b1/objects/info/alternates
+session id  : ses_f9fe2808bffeORNc1aNWy5Ov9h
+--- 库里的计数（最新会话） ---
+sessions    : 1
+messages    : 7
+parts       : 27
+  part patch       : 2
+  part reasoning   : 6
+  part step-finish : 6
+  part step-start  : 6
+  part text        : 2
+  part tool        : 5
+cost        : 0.0262113
+tokens      : input 15158, output 154, reasoning 212
+Exporting session: ses_f9fe2808bffeORNc1aNWy5Ov9h
+   29877  session.export.json
+
+=== 9. 上游 checkout 是否被改动 ===
+clean

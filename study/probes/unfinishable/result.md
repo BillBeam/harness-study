@@ -36,6 +36,20 @@
 
 ---
 
+## opencode（run 模式）
+
+记录：[终端全文](opencode/terminal.txt) ｜ [数据目录](opencode/data/)（库、日志、快照 git 目录）｜ [会话导出](opencode/session.export.json)
+
+**发生了什么。** 第 1 步 `ls -la`；第 2 步两个 read，读 `classify.py`、`test_classify.py`；第 3 步跑 `python3 -m unittest -v`，四条 ERROR（`NotImplementedError`）；第 4 步没有再调工具，回话一句「impossible without violating constraints」，循环退出。`classify.py` 一字未改，`git diff` 为空，测试仍是四条 ERROR。第 2 步的 reasoning 里已经写到「窍门大概是返回一个自定义 `__eq__` 的 str」，第 4 步的 reasoning 写「不可能」，然后停。
+
+**步数。** 库里 `step-start` 片段 4 条。整轮从 user 消息建立到最后一条 assistant 完成约 23 秒。
+
+**停下它的是谁。** 模型自己。run 模式没有步数、花费、时间上限（agent 的 `steps` 默认无穷，到了也只加提示不 break，见 [map.md](../../opencode/map.md) 第四问）；循环退出的条件是「最后一条 assistant 的 `finish` 不是 `tool-calls`，且没有工具调用片段」，第 4 步 `finish` 是 `stop`、没有工具片段，于是退出。wrapper 的两条兜底没碰到。
+
+**记录文件的最终状态。** 库里 1 行 `session`、5 行 `message`、18 行 `part`（`step-start` 4、`reasoning` 4、`tool` 4、`text` 2、`step-finish` 4，没有 `patch`——没有文件被改）；最后一条 assistant 的 `finish` 是 `stop`，进程退出码 0。库里同样没有任何一处记着「任务没做成」；与前两家不同的是，这一次最后一条 `text` 片段的正文本身写着做不成。日志 48 行。导出 31468 字节。
+
+---
+
 ## 卡外发现
 
 - **两次运行都以"成功"的形状收尾，而任务都没做成。** mini 写 `exit_status: Submitted`，dsh 写 `turn/end reason: completed`，两边的记录文件里都找不到"没做成"这件事。两家都不核对模型的完成声明，是否做成得由记录之外的东西去判。

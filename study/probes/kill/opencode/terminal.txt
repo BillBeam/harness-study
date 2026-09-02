@@ -1,0 +1,124 @@
+=== 探针复跑记录 ===
+probe       : kill
+repo        : opencode
+date        : 2026-09-02T03:16:39Z
+api key     : 取自环境变量 XAI_API_KEY（已设置，不入库）
+wrapper 兜底: 墙钟 480 秒 / 步数 40 步
+
+=== 1. pin ===
+opencode @ 774cc7c1914e4329eefde5a669f938b0cf566661
+opencode --version : 1.18.26（= pin 处 packages/opencode/package.json 的 version）
+
+=== 2. 铺工作副本 ===
+work dir    : /home/user/harness-study/.dsh-run/probe-kill/workspace
+README.md
+slow_check.sh
+stats.py
+test_stats.py
+
+--- 跑之前的测试 ---
++ [3.0]
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.002s
+
+FAILED (failures=2)
+
+=== 3. opencode 的续跑入口 ===
+--- opencode run --help 里所有带 continue / session 的行 ---
+  -c, --continue     continue the last session                                             [boolean]
+  -s, --session      session id to continue                                                 [string]
+      --fork         fork the session before continuing (requires --continue or --session) [boolean]
+      --share        share the session                                                     [boolean]
+      --title        title for the session (uses truncated prompt if no value provided)     [string]
+
+=== 4. 跑 opencode ===
+[wrapper] harness pid = 3801
+[0m
+> build · grok-4.3
+[0m
+
+[wrapper] 看到 .probe-running，工具正在执行中；再等 4 秒让它跑进去
+[wrapper] 杀之前 pid 3801 的子进程：4032 
+[wrapper] kill -9 3801
+study/probes/wrapper.sh: line 343:  3801 Killed                  ( cd "$WORK" && exec env -i PATH="/usr/local/bin:/usr/bin:/bin" HOME="$OC_HOME_DIR" COLUMNS=120 OPENCODE_DISABLE_AUTOUPDATE=1 "$KEY_VAR=$KEY" "${env_args[@]}" "$OC" run --dir "$WORK" --model "${OC_MODEL:-xai/grok-4.3}" --auto --title "probe $PROBE" "${resume[@]}" "$(cat "$TASK_DIR/README.md")" < /dev/null )
+[wrapper] 收落单的子进程
+
+[wrapper] harness 退出码 137
+[wrapper] 停下它的是：外部 wrapper：kill -9（工具执行进行中）
+
+=== 5. 到第几步 ===
+各家自己的记录里数出来的步数：1
+
+=== 6. 工作副本被改成什么样 ===
+
+--- 未跟踪的新文件 ---
+?? .probe-running
+?? __pycache__/stats.cpython-311.pyc
+?? __pycache__/test_stats.cpython-311.pyc
+
+=== 7. 跑之后的测试 ===
+
+======================================================================
+FAIL: test_window_equal_to_length (test_stats.MovingAverageTest.test_window_equal_to_length)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/user/harness-study/.dsh-run/probe-kill/workspace/test_stats.py", line 15, in test_window_equal_to_length
+    self.assertEqual(moving_average([2, 4], 2), [3.0])
+AssertionError: Lists differ: [] != [3.0]
+
+Second list contains 1 additional elements.
+First extra element 0:
+3.0
+
+- []
++ [3.0]
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.002s
+
+FAILED (failures=2)
+
+=== 8. 记录文件 ===
+    4324  data/log/opencode.log
+  266240  data/opencode.db
+      23  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/HEAD
+     319  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/config
+      73  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/description
+     478  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/applypatch-msg.sample
+     896  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/commit-msg.sample
+    4726  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/fsmonitor-watchman.sample
+     189  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/post-update.sample
+     424  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/pre-applypatch.sample
+    1643  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/pre-commit.sample
+     416  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/pre-merge-commit.sample
+    1374  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/pre-push.sample
+    4898  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/pre-rebase.sample
+     544  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/pre-receive.sample
+    1492  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/prepare-commit-msg.sample
+    2783  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/push-to-checkout.sample
+    2308  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/sendemail-validate.sample
+    3650  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/hooks/update.sample
+     852  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/index
+     240  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/info/exclude
+      97  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/objects/42/6d52b38fa5514f548025764816c8437a4aa624
+     785  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/objects/90/71726de4f551b5ecd8fdb14bb313967109e574
+    1117  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/objects/98/cbe106de86afd22a62628625e747127ab8049a
+     195  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/objects/e9/5f0fc4354b42c9e8cb05dc9aea953af5c548b1
+      68  data/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80/objects/info/alternates
+session id  : ses_f9fe1899cffeZO96d2zCzeDQD6
+--- 库里的计数（最新会话） ---
+sessions    : 1
+messages    : 2
+parts       : 4
+  part reasoning   : 1
+  part step-start  : 1
+  part text        : 1
+  part tool        : 1
+cost        : 0.0
+tokens      : input 0, output 0, reasoning 0
+Exporting session: ses_f9fe1899cffeZO96d2zCzeDQD6
+    5804  session.export.json
+
+=== 9. 上游 checkout 是否被改动 ===
+clean

@@ -42,6 +42,24 @@ wrapper 的兜底是墙钟 480 秒或 40 步；这个探针里两次都没轮到
 
 ---
 
+## opencode（run 模式）
+
+记录：[被杀那次的终端全文](opencode/terminal.txt) ｜ [续跑那次的终端全文](opencode/terminal-resume.txt) ｜ [死前的数据目录](opencode/data-at-kill/)（库 `opencode.db`、日志 `log/opencode.log`、快照 git 目录）｜ [死前会话的导出](opencode/session-at-kill.export.json) ｜ [续跑后的数据目录](opencode/data/) ｜ [续跑后同一会话的导出](opencode/session.export.json)
+
+**发生了什么。** `opencode run --dir <工作副本> --model xai/grok-4.3 --auto "<任务文本>"`。第 1 步模型直接发出 `bash slow_check.sh`，调用参数里自带 `timeout: 300000`。脚本跑起来后 wrapper 记下 harness 的 pid 3801 和它当时唯一的子进程 4032，对 3801 发 `kill -9`，进程以 137 退出。终端全文里第 1 步的命令行没有印出来；续跑那次同一条命令是和它的全部输出一起印出来的，被杀这次没等到那一刻。
+
+**步数。** 库里 `step-start` 片段 1 条。整轮从 user 消息建立到被杀约 10 秒。
+
+**记录文件的最终状态（死的那一刻）。** 库里 1 行 `session`、2 行 `message`（user、assistant）、4 行 `part`：user 的 `text`；assistant 的 `step-start`（带工作副本的快照 tree 哈希）、`reasoning`、以及那条 `bash` 的 `tool` 片段。**发出 `bash slow_check.sh` 的那条 tool 片段在库里**，`state.status` 是 `running`，`state.time.start` 有、`end` 没有，`state.metadata.output` 里是脚本到那时为止的输出（`开始采基线` 加 5 行 sample）——工具边跑边把部分输出回写进同一行。这条 assistant 消息没有 `finish`、没有 `time.completed`、没有 `step-finish` 片段，会话行的 cost 与 token 都是 0（用量在 `step-finish` 时才累加）。日志 25 行，最后一行是那次 bash 权限判定 `evaluated permission=bash pattern="bash slow_check.sh" … action=allow`。库文件在 wrapper 复制之前已被 wrapper 自己的一次读库检查点合并（见 [storage-map.md](../../opencode/storage-map.md) 第二节末尾），所以 `data-at-kill/` 里只有一个 `opencode.db`，没有 `-wal`。
+
+**续跑入口。** 有。`opencode run --help` 里有 `-c, --continue`（接上一个会话）、`-s, --session <id>`（接指定会话）、`--fork`（先分叉再接）三项（终端全文第 3 节记着实测输出）。本次用 `--session ses_f9fe1899cffeZO96d2zCzeDQD6`，消息仍是同一份任务文本，工作副本与 HOME 不重铺。
+
+**续跑是否成功。** 成了，而且是**同一个会话**接着跑：库里仍是 1 行 `session`，新的 user 消息与后面 7 条 assistant 消息都挂在原来的 `ses_f9fe1899…` 下。模型第一步的 reasoning 写着「上一次 bash 调用被打断了，我需要再跑一次」，重跑了 `bash slow_check.sh`（这次跑完，26 秒），然后 glob、读两个文件、edit 改 `stats.py`、跑测试，四条全绿，回话「Done. All tests pass.」。续跑那次 7 步；两次合计库里 `step-start` 8 条、`message` 10 行、`part` 36 行；从最初的 user 消息到最后一条 assistant 完成约 108 秒。会话行的 `time_updated` 从死前的 …005805 变成 …112844。
+
+**模型看到的历史与死前是否一致。** 死前那 2 条消息（user 与被打断的 assistant，含 4 个片段）在续跑后的导出里**逐字节相同**，续跑只追加不改写；被打断的那条 tool 片段在库里**仍是 `running`**，没有被改成 `error`。但模型看到的不是库里的原样：把库里的消息转成模型请求时，`pending` / `running` 状态的 tool 片段会被换成一条 `output-error`，错误文本固定是 `[Tool execution was interrupted]`（[message-v2.ts:351-357](https://github.com/anomalyco/opencode/blob/774cc7c1914e4329eefde5a669f938b0cf566661/packages/opencode/src/session/message-v2.ts#L351-L357)），所以模型看到的是「上一次调用被打断」，与它 reasoning 里的话对上；这个替换只发生在组装请求时，不写回库。
+
+---
+
 ## 卡外发现
 
 - **两家都在"工具已发出、结果未落盘"这个窗口里死了，留下的东西不是同一类。** mini 的记录停在上一步末尾，发出命令的那条模型消息随进程一起没了；dsh 的日志里调用在、结果不在。差别来自落盘时机：一个按步整份重写，一个按事件追加。

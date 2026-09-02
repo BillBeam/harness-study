@@ -1,0 +1,25 @@
+timestamp=2026-09-02T03:16:43.462Z level=INFO run=a238cb0f message="creating instance" directory=/home/user/harness-study/.dsh-run/probe-kill/workspace
+timestamp=2026-09-02T03:16:43.466Z level=INFO run=a238cb0f message=fromDirectory directory=/home/user/harness-study/.dsh-run/probe-kill/workspace
+timestamp=2026-09-02T03:16:43.576Z level=INFO run=a238cb0f message=bootstrapping directory=/home/user/harness-study/.dsh-run/probe-kill/workspace
+timestamp=2026-09-02T03:16:43.590Z level=INFO run=a238cb0f message=loading path=/home/user/harness-study/.dsh-run/probe-kill/home/.config/opencode/config.json
+timestamp=2026-09-02T03:16:43.591Z level=INFO run=a238cb0f message=loading path=/home/user/harness-study/.dsh-run/probe-kill/home/.config/opencode/opencode.json
+timestamp=2026-09-02T03:16:43.592Z level=INFO run=a238cb0f message=loading path=/home/user/harness-study/.dsh-run/probe-kill/home/.config/opencode/opencode.jsonc
+timestamp=2026-09-02T03:16:43.958Z level=INFO run=a238cb0f message="all LSPs are disabled"
+timestamp=2026-09-02T03:16:43.960Z level=INFO run=a238cb0f message="all formatters are disabled"
+timestamp=2026-09-02T03:16:43.960Z level=INFO run=a238cb0f message=init
+timestamp=2026-09-02T03:16:44.072Z level=ERROR run=a238cb0f message="Failed to fetch models.dev" cause="Cause([Fail(HttpClientError: StatusCode: non 2xx status code (403 GET https://models.opencode.ai/api.json))])"
+timestamp=2026-09-02T03:16:44.259Z level=INFO run=a238cb0f message=created id=ses_f9fe1899cffeZO96d2zCzeDQD6 slug=brave-comet version=1.18.26 projectID=8c2eede07187097253b0c85f5c7c5bbf2fe6ff15 directory=/home/user/harness-study/.dsh-run/probe-kill/workspace path="" workspaceID=undefined parentID=undefined title="probe kill" agent=undefined model=undefined metadata=undefined permission="[{\"permission\":\"question\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_enter\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_exit\",\"pattern\":\"*\",\"action\":\"deny\"}]" cost=0 tokens.input=0 tokens.output=0 tokens.reasoning=0 tokens.cache.read=0 tokens.cache.write=0 time.created=1788319004259 time.updated=1788319004259
+timestamp=2026-09-02T03:16:44.281Z level=INFO run=a238cb0f message="event connected"
+timestamp=2026-09-02T03:16:45.336Z level=INFO run=a238cb0f message=loop session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 step=0
+timestamp=2026-09-02T03:16:45.558Z level=INFO run=a238cb0f message=initialized
+timestamp=2026-09-02T03:16:45.765Z level=INFO run=a238cb0f message=tracking hash=e95f0fc4354b42c9e8cb05dc9aea953af5c548b1 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:16:45.777Z level=INFO run=a238cb0f message="shell tool using shell" shell=/usr/bin/bash
+timestamp=2026-09-02T03:16:45.792Z level=INFO run=a238cb0f message=init count=1
+timestamp=2026-09-02T03:16:46.096Z level=INFO run=a238cb0f message="watcher backend" directory=/home/user/harness-study/.dsh-run/probe-kill/workspace platform=linux backend=inotify
+timestamp=2026-09-02T03:16:46.113Z level=INFO run=a238cb0f message="project copy refresh started" projectID=8c2eede07187097253b0c85f5c7c5bbf2fe6ff15
+timestamp=2026-09-02T03:16:46.944Z level=INFO run=a238cb0f message="project copy refresh done" projectID=8c2eede07187097253b0c85f5c7c5bbf2fe6ff15 updated=[] removed=[]
+timestamp=2026-09-02T03:16:47.024Z level=INFO run=a238cb0f message="booting location services" directory=/home/user/harness-study/.dsh-run/probe-kill/workspace workspaceID=undefined
+timestamp=2026-09-02T03:16:47.059Z level=INFO run=a238cb0f message=process session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 messageID=msg_0601e7a9e001WfOTXw742T0fFy
+timestamp=2026-09-02T03:16:47.063Z level=INFO run=a238cb0f message=stream providerID=xai modelID=grok-4.3 session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 small=false agent=build mode=primary
+timestamp=2026-09-02T03:16:47.093Z level=INFO run=a238cb0f message="llm runtime selected" llm.runtime=ai-sdk llm.provider=xai llm.model=grok-4.3
+timestamp=2026-09-02T03:16:49.901Z level=INFO run=a238cb0f message=evaluated permission=bash pattern="bash slow_check.sh" action.permission=* action.action=allow action.pattern=*
