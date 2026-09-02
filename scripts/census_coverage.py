@@ -217,6 +217,16 @@ REPO_SCOPE: dict[str, dict] = {
             (r"^patches/", "对第三方依赖打的补丁，不是本仓库源码"),
         ],
     },
+    # Provisional: this pin has been run (study/opencode/run.md), not yet
+    # censused. The harness is the bun monorepo under `packages/` plus the
+    # root's own files; narrow it when a census is written. Declared here so
+    # that selftest's "every pin has a declared census scope" stays honest
+    # rather than because the scope has been walked.
+    "opencode": {
+        "roots": ["packages", ""],
+        "doc_roots": [],
+        "exclude": [],
+    },
 }
 
 

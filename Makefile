@@ -6,7 +6,7 @@
 PYTHON ?= python3
 VARIANT ?= default
 
-.PHONY: help check check-v coverage coverage-v selftest sync status run run-dsh
+.PHONY: help check check-v coverage coverage-v selftest sync status run run-dsh run-opencode
 
 help:  ## show this help
 	@grep -hE '^[a-z-]+:.*?##' $(MAKEFILE_LIST) | sort | \
@@ -32,6 +32,9 @@ run:  ## run mini-swe-agent on the fixed task, writing study/mini-swe-agent/trac
 
 run-dsh:  ## run DeepSeek Harness on the same task (VARIANT=default|minimal)
 	@scripts/run_dsh.sh $(VARIANT)
+
+run-opencode:  ## run OpenCode on the same task, writing study/opencode/trace/
+	@scripts/run_opencode.sh
 
 sync:  ## materialise every pinned repository at its pinned commit
 	@scripts/pin.sh sync
