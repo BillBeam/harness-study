@@ -1,0 +1,79 @@
+=== 探针复跑记录 ===
+probe       : big-output
+repo        : deepseek-harness
+date        : 2026-08-31T07:24:52Z
+api key     : 取自环境变量 XAI_API_KEY（已设置，不入库）
+wrapper 兜底: 墙钟 480 秒 / 步数 40 步
+
+=== 1. pin ===
+deepseek-harness @ cd5ef8148158c3a752a658978873241fdf8e2bbc
+dsh         : 0.1.2-alpha.1
+
+=== 2. 铺工作副本 ===
+work dir    : /home/user/harness-study/.dsh-run/probe-big-output/workspace
+README.md
+gen.py
+
+--- 跑之前的测试 ---
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.000s
+
+OK
+
+=== 3. patch ===
+
+--- 这一次的 patch 覆盖层 ---
+# 由 study/probes/wrapper.sh 为探针 big-output 生成，不要手改。
+
+- id: llm-pi-ai
+  config:
+    providers:
+      xai:
+        apiKeyEnv: XAI_API_KEY
+
+- id: agent-default-model
+  config:
+    provider: xai
+    model: grok-4.3
+
+- id: session-persistence-jsonl
+  config:
+    root: !!js dshHomePath('sessions')
+    compression: none
+
+=== 4. 跑 deepseek-harness ===
+[wrapper] harness pid = 3302
+(node:3302) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+(Use `node --trace-warnings ...` to show where the warning was created)
+dsh: reasoning:
+The task is to run `python3 gen.py`, which prints a long list. The first line is the starting token, the last line is the ending token, and there are hundreds of lines of流水 in between.
+dsh: reasoning:
+The output starts with "开头令牌：ALPHA-7391" and ends with "结尾令牌：OMEGA-5520". I need to extract those two tokens and write them to answer.txt, one per line.
+dsh: reasoning:
+The task is complete. The tokens have been extracted from the script output and written to answer.txt exactly as specified.
+Done. `answer.txt` now contains the two tokens (one per line) taken directly from the `python3 gen.py` run.
+
+[wrapper] harness 退出码 0
+[wrapper] 停下它的是：harness 自己退出（退出码 0），wrapper 的两条兜底都没用上
+
+=== 5. 到第几步 ===
+各家自己的记录里数出来的步数：3
+
+=== 6. 工作副本被改成什么样 ===
+
+--- 未跟踪的新文件 ---
+?? answer.txt
+
+=== 7. 跑之后的测试 ===
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.000s
+
+OK
+
+=== 8. 记录文件 ===
+   84713  sessions/--home-user-harness-study-.dsh-run-probe-big-output-workspace--/session-a409aa9f-7460-426b-a227-033f3f85eb43/session.jsonl
+
+=== 9. 上游 checkout 是否被改动 ===
+clean
