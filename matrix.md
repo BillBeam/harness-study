@@ -143,5 +143,6 @@ T92 是本卡新增的横切行，两列都不空：`deepseek-harness` 列给五
 | --- | --- | --- | --- |
 | mini-swe-agent | SWE-agent/mini-swe-agent | `mini-swe-agent@25941c89cfbc91eb40b3f8756348c91d9977d57e` | [study/mini-swe-agent](study/mini-swe-agent/) |
 | deepseek-harness | deepseek-ai/deepseek-harness | `deepseek-harness@cd5ef8148158c3a752a658978873241fdf8e2bbc` | [study/deepseek-harness](study/deepseek-harness/) |
+| opencode | anomalyco/opencode | `opencode@774cc7c1914e4329eefde5a669f938b0cf566661` | [study/opencode](study/opencode/) |
 
 pin 以 `repos/pins.tsv` 为准，本表是给人读的副本。
