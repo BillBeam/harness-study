@@ -164,8 +164,9 @@ INCLUDE_PROMPT_RE = re.compile(
 )
 INCLUDE_README_RE = re.compile(r"(?:^|/)(?:README|AGENTS|CLAUDE)\.md$")
 # Text kinds that are in scope only inside a root declared as documentation or
-# snapshot material (see REPO_SCOPE), never repository-wide.
-INCLUDE_TEXT_EXT = {".md", ".txt", ".yml", ".yaml", ".json", ".jsonl", ".toml", ".ini", ".cfg", ".xml", ".html"}
+# snapshot material (see REPO_SCOPE), never repository-wide. `.mdx` is the
+# page format of Mintlify / Starlight manuals (opencode's shipped docs).
+INCLUDE_TEXT_EXT = {".md", ".mdx", ".txt", ".yml", ".yaml", ".json", ".jsonl", ".toml", ".ini", ".cfg", ".xml", ".html"}
 
 # --------------------------------------------------------------------------
 # 6. Per-repository scope.

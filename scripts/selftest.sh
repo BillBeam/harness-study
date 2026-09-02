@@ -370,6 +370,23 @@ print(" ".join(bad + ["OVER:" + k for k in kept]))
 if [ -z "$excl" ]; then ok "every named exclusion category is excluded"
 else bad "every named exclusion category is excluded" "not excluded: $excl"; fi
 
+# --- an `.mdx` page counts as documentation inside a declared doc root, and
+#     nowhere else. Outside the doc roots it is none of the six kinds, so the
+#     scope must not grow repository-wide just because the extension is known.
+mdx="$(python3 -c '
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("cc", "'"$COV"'")
+m = importlib.util.module_from_spec(spec); sys.modules["cc"] = m
+spec.loader.exec_module(m)
+bad = []
+if m.kind_of("docs/guide/intro.mdx", ["docs"]) != "文档或 snapshot": bad.append("in-root .mdx not documentation")
+if m.kind_of("src/page.mdx", ["docs"]) is not None: bad.append("out-of-root .mdx in scope")
+if m.kind_of("docs/guide/intro.md", ["docs"]) != "文档或 snapshot": bad.append(".md regressed")
+print(" ".join(bad))
+' 2>&1)"
+if [ -z "$mdx" ]; then ok ".mdx is documentation inside a doc root only"
+else bad ".mdx is documentation inside a doc root only" "$mdx"; fi
+
 # --- REPO_SCOPE must not accumulate dead entries, the same lint DEFAULT_TARGETS gets
 deadscope="$(python3 -c '
 import importlib.util, sys, re
