@@ -53,6 +53,29 @@ dsh 的 `edit` 要求唯一匹配：替换前先数命中次数，命中 0 次�
 
 ---
 
+## opencode（run 模式）
+
+记录：[终端全文](opencode/terminal.txt) ｜ [数据目录](opencode/data/)（库、日志、快照 git 目录）｜ [会话导出](opencode/session.export.json)
+
+**发生了什么。** 第 1 步 glob `**/*`；第 2、3 步各一个 read，读 `feed.py`、`test_feed.py`；第 4 步一个 `edit` 调用，参数是：
+
+```
+oldString: "    limit = 10\n    return list(entries)[:limit]"
+newString: "    limit = 50\n    return list(entries)[:limit]"
+```
+
+模型把 `oldString` 扩成两行——`parse_archive` 里那行的下一行是 `[-limit:]` 而不是 `[:limit]`——于是这个串在文件里只出现一次。edit 工具在替换前数 `oldString` 出现的次数：0 次报错「找不到」，多于 1 次且没有 `replaceAll` 报错「找到多处精确匹配，请多给上下文或设 replaceAll」，恰好 1 次才替换（[edit.ts:165-176](https://github.com/anomalyco/opencode/blob/774cc7c1914e4329eefde5a669f938b0cf566661/packages/core/src/tool/edit.ts#L165-L176)）。这一次是 1 次，工具回「Edit applied successfully」，终端上印出一段 unified diff。第 5 步跑测试，两条全绿；第 6 步回话「Done.」。
+
+这里的编辑原语是 harness 自带的：`oldString` 多处匹配会被工具本身拒绝，「只改两处中的一处」这个约束落在了工具的唯一性检查上，模型用扩上下文的办法满足了它。
+
+**步数。** 库里 `step-start` 片段 6 条。整轮从 user 消息建立到最后一条 assistant 完成约 16 秒。
+
+**记录文件的最终状态。** 库里 1 行 `session`、7 行 `message`、27 行 `part`（`step-start` 6、`reasoning` 6、`tool` 5、`text` 2、`step-finish` 6、`patch` 2——两条 `patch` 分别记 `feed.py` 与第 5 步产生的 `__pycache__/feed.cpython-311.pyc`）；第 4 步的 `step-finish.snapshot` 从 `e35dde7a…` 变成 `b42f625f…`，是这一轮唯一一次快照 tree 哈希变化，正对着那次 edit。最后一条 assistant 的 `finish` 是 `stop`。日志 63 行。导出 29877 字节。
+
+**结果。** `parse_recent` 改成 50，`parse_archive` 仍是 10，两条测试全绿。
+
+---
+
 ## 卡外发现
 
 - **两家都对了，但"只改一处"这件事落在不同的地方。** mini 那边落在模型选的 sed 地址范围里，harness 事后不知道也不检查命中了几处；dsh 那边有一条会数命中次数、多于一处就拒的检查在，只是这一轮模型先一步把匹配写唯一了，检查没开口。同一个结果，一边是无人核对的正确，一边是有人核对但没用上的正确。

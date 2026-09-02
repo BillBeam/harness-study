@@ -1,0 +1,93 @@
+timestamp=2026-09-02T03:16:43.462Z level=INFO run=a238cb0f message="creating instance" directory=/home/user/harness-study/.dsh-run/probe-kill/workspace
+timestamp=2026-09-02T03:16:43.466Z level=INFO run=a238cb0f message=fromDirectory directory=/home/user/harness-study/.dsh-run/probe-kill/workspace
+timestamp=2026-09-02T03:16:43.576Z level=INFO run=a238cb0f message=bootstrapping directory=/home/user/harness-study/.dsh-run/probe-kill/workspace
+timestamp=2026-09-02T03:16:43.590Z level=INFO run=a238cb0f message=loading path=/home/user/harness-study/.dsh-run/probe-kill/home/.config/opencode/config.json
+timestamp=2026-09-02T03:16:43.591Z level=INFO run=a238cb0f message=loading path=/home/user/harness-study/.dsh-run/probe-kill/home/.config/opencode/opencode.json
+timestamp=2026-09-02T03:16:43.592Z level=INFO run=a238cb0f message=loading path=/home/user/harness-study/.dsh-run/probe-kill/home/.config/opencode/opencode.jsonc
+timestamp=2026-09-02T03:16:43.958Z level=INFO run=a238cb0f message="all LSPs are disabled"
+timestamp=2026-09-02T03:16:43.960Z level=INFO run=a238cb0f message="all formatters are disabled"
+timestamp=2026-09-02T03:16:43.960Z level=INFO run=a238cb0f message=init
+timestamp=2026-09-02T03:16:44.072Z level=ERROR run=a238cb0f message="Failed to fetch models.dev" cause="Cause([Fail(HttpClientError: StatusCode: non 2xx status code (403 GET https://models.opencode.ai/api.json))])"
+timestamp=2026-09-02T03:16:44.259Z level=INFO run=a238cb0f message=created id=ses_f9fe1899cffeZO96d2zCzeDQD6 slug=brave-comet version=1.18.26 projectID=8c2eede07187097253b0c85f5c7c5bbf2fe6ff15 directory=/home/user/harness-study/.dsh-run/probe-kill/workspace path="" workspaceID=undefined parentID=undefined title="probe kill" agent=undefined model=undefined metadata=undefined permission="[{\"permission\":\"question\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_enter\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"plan_exit\",\"pattern\":\"*\",\"action\":\"deny\"}]" cost=0 tokens.input=0 tokens.output=0 tokens.reasoning=0 tokens.cache.read=0 tokens.cache.write=0 time.created=1788319004259 time.updated=1788319004259
+timestamp=2026-09-02T03:16:44.281Z level=INFO run=a238cb0f message="event connected"
+timestamp=2026-09-02T03:16:45.336Z level=INFO run=a238cb0f message=loop session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 step=0
+timestamp=2026-09-02T03:16:45.558Z level=INFO run=a238cb0f message=initialized
+timestamp=2026-09-02T03:16:45.765Z level=INFO run=a238cb0f message=tracking hash=e95f0fc4354b42c9e8cb05dc9aea953af5c548b1 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:16:45.777Z level=INFO run=a238cb0f message="shell tool using shell" shell=/usr/bin/bash
+timestamp=2026-09-02T03:16:45.792Z level=INFO run=a238cb0f message=init count=1
+timestamp=2026-09-02T03:16:46.096Z level=INFO run=a238cb0f message="watcher backend" directory=/home/user/harness-study/.dsh-run/probe-kill/workspace platform=linux backend=inotify
+timestamp=2026-09-02T03:16:46.113Z level=INFO run=a238cb0f message="project copy refresh started" projectID=8c2eede07187097253b0c85f5c7c5bbf2fe6ff15
+timestamp=2026-09-02T03:16:46.944Z level=INFO run=a238cb0f message="project copy refresh done" projectID=8c2eede07187097253b0c85f5c7c5bbf2fe6ff15 updated=[] removed=[]
+timestamp=2026-09-02T03:16:47.024Z level=INFO run=a238cb0f message="booting location services" directory=/home/user/harness-study/.dsh-run/probe-kill/workspace workspaceID=undefined
+timestamp=2026-09-02T03:16:47.059Z level=INFO run=a238cb0f message=process session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 messageID=msg_0601e7a9e001WfOTXw742T0fFy
+timestamp=2026-09-02T03:16:47.063Z level=INFO run=a238cb0f message=stream providerID=xai modelID=grok-4.3 session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 small=false agent=build mode=primary
+timestamp=2026-09-02T03:16:47.093Z level=INFO run=a238cb0f message="llm runtime selected" llm.runtime=ai-sdk llm.provider=xai llm.model=grok-4.3
+timestamp=2026-09-02T03:16:49.901Z level=INFO run=a238cb0f message=evaluated permission=bash pattern="bash slow_check.sh" action.permission=* action.action=allow action.pattern=*
+timestamp=2026-09-02T03:17:52.382Z level=INFO run=3c90ce1b message="creating instance" directory=/home/user/harness-study/.dsh-run/probe-kill/workspace
+timestamp=2026-09-02T03:17:52.385Z level=INFO run=3c90ce1b message=fromDirectory directory=/home/user/harness-study/.dsh-run/probe-kill/workspace
+timestamp=2026-09-02T03:17:52.473Z level=INFO run=3c90ce1b message=bootstrapping directory=/home/user/harness-study/.dsh-run/probe-kill/workspace
+timestamp=2026-09-02T03:17:52.487Z level=INFO run=3c90ce1b message=loading path=/home/user/harness-study/.dsh-run/probe-kill/home/.config/opencode/config.json
+timestamp=2026-09-02T03:17:52.489Z level=INFO run=3c90ce1b message=loading path=/home/user/harness-study/.dsh-run/probe-kill/home/.config/opencode/opencode.json
+timestamp=2026-09-02T03:17:52.489Z level=INFO run=3c90ce1b message=loading path=/home/user/harness-study/.dsh-run/probe-kill/home/.config/opencode/opencode.jsonc
+timestamp=2026-09-02T03:17:52.633Z level=INFO run=3c90ce1b message="all LSPs are disabled"
+timestamp=2026-09-02T03:17:52.635Z level=INFO run=3c90ce1b message="all formatters are disabled"
+timestamp=2026-09-02T03:17:52.635Z level=INFO run=3c90ce1b message=init
+timestamp=2026-09-02T03:17:52.878Z level=INFO run=3c90ce1b message="event connected"
+timestamp=2026-09-02T03:17:54.148Z level=INFO run=3c90ce1b message=loop session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 step=0
+timestamp=2026-09-02T03:17:54.361Z level=INFO run=3c90ce1b message=tracking hash=1baa9104ccaae6b5dd0baaa276b37586753b78e5 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:17:54.373Z level=INFO run=3c90ce1b message="shell tool using shell" shell=/usr/bin/bash
+timestamp=2026-09-02T03:17:54.385Z level=INFO run=3c90ce1b message=init count=1
+timestamp=2026-09-02T03:17:54.865Z level=INFO run=3c90ce1b message="watcher backend" directory=/home/user/harness-study/.dsh-run/probe-kill/workspace platform=linux backend=inotify
+timestamp=2026-09-02T03:17:54.878Z level=INFO run=3c90ce1b message="project copy refresh started" projectID=8c2eede07187097253b0c85f5c7c5bbf2fe6ff15
+timestamp=2026-09-02T03:17:55.556Z level=INFO run=3c90ce1b message="project copy refresh done" projectID=8c2eede07187097253b0c85f5c7c5bbf2fe6ff15 updated=[] removed=[]
+timestamp=2026-09-02T03:17:55.641Z level=INFO run=3c90ce1b message="booting location services" directory=/home/user/harness-study/.dsh-run/probe-kill/workspace workspaceID=undefined
+timestamp=2026-09-02T03:17:55.742Z level=INFO run=3c90ce1b message=process session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 messageID=msg_0601f876c001b5eDrWGrwkTswM
+timestamp=2026-09-02T03:17:55.745Z level=INFO run=3c90ce1b message=stream providerID=xai modelID=grok-4.3 session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 small=false agent=build mode=primary
+timestamp=2026-09-02T03:17:55.774Z level=INFO run=3c90ce1b message="llm runtime selected" llm.runtime=ai-sdk llm.provider=xai llm.model=grok-4.3
+timestamp=2026-09-02T03:17:57.841Z level=INFO run=3c90ce1b message=evaluated permission=bash pattern="bash slow_check.sh" action.permission=* action.action=allow action.pattern=*
+timestamp=2026-09-02T03:17:59.014Z level=ERROR run=3c90ce1b message="Failed to fetch models.dev" cause="Cause([Fail(HttpClientError: StatusCode: non 2xx status code (403 GET https://models.opencode.ai/api.json))])"
+timestamp=2026-09-02T03:18:23.451Z level=INFO run=3c90ce1b message=tracking hash=e95f0fc4354b42c9e8cb05dc9aea953af5c548b1 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:18:23.535Z level=INFO run=3c90ce1b message=loop session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 step=1
+timestamp=2026-09-02T03:18:23.612Z level=INFO run=3c90ce1b message=tracking hash=e95f0fc4354b42c9e8cb05dc9aea953af5c548b1 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:18:23.673Z level=INFO run=3c90ce1b message=process session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 messageID=msg_0601ffa32001otMQSN7tXW6O6a
+timestamp=2026-09-02T03:18:23.674Z level=INFO run=3c90ce1b message=stream providerID=xai modelID=grok-4.3 session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 small=false agent=build mode=primary
+timestamp=2026-09-02T03:18:23.678Z level=INFO run=3c90ce1b message="llm runtime selected" llm.runtime=ai-sdk llm.provider=xai llm.model=grok-4.3
+timestamp=2026-09-02T03:18:24.933Z level=INFO run=3c90ce1b message=evaluated permission=glob pattern=**/* action.permission=* action.action=allow action.pattern=*
+timestamp=2026-09-02T03:18:25.059Z level=INFO run=3c90ce1b message=tracking hash=e95f0fc4354b42c9e8cb05dc9aea953af5c548b1 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:18:25.138Z level=INFO run=3c90ce1b message=loop session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 step=2
+timestamp=2026-09-02T03:18:25.220Z level=INFO run=3c90ce1b message=tracking hash=e95f0fc4354b42c9e8cb05dc9aea953af5c548b1 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:18:25.257Z level=INFO run=3c90ce1b message=process session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 messageID=msg_060200075001AQyenNxNVTpjVG
+timestamp=2026-09-02T03:18:25.258Z level=INFO run=3c90ce1b message=stream providerID=xai modelID=grok-4.3 session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 small=false agent=build mode=primary
+timestamp=2026-09-02T03:18:25.278Z level=INFO run=3c90ce1b message="llm runtime selected" llm.runtime=ai-sdk llm.provider=xai llm.model=grok-4.3
+timestamp=2026-09-02T03:18:26.574Z level=INFO run=3c90ce1b message=evaluated permission=read pattern=stats.py action.permission=read action.pattern=* action.action=allow
+timestamp=2026-09-02T03:18:26.591Z level=INFO run=3c90ce1b message="touching file" file=/home/user/harness-study/.dsh-run/probe-kill/workspace/stats.py
+timestamp=2026-09-02T03:18:26.647Z level=INFO run=3c90ce1b message=tracking hash=e95f0fc4354b42c9e8cb05dc9aea953af5c548b1 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:18:26.724Z level=INFO run=3c90ce1b message=loop session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 step=3
+timestamp=2026-09-02T03:18:26.797Z level=INFO run=3c90ce1b message=tracking hash=e95f0fc4354b42c9e8cb05dc9aea953af5c548b1 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:18:26.820Z level=INFO run=3c90ce1b message=process session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 messageID=msg_0602006a7001b6Dc9jyOdAn8dv
+timestamp=2026-09-02T03:18:26.821Z level=INFO run=3c90ce1b message=stream providerID=xai modelID=grok-4.3 session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 small=false agent=build mode=primary
+timestamp=2026-09-02T03:18:26.839Z level=INFO run=3c90ce1b message="llm runtime selected" llm.runtime=ai-sdk llm.provider=xai llm.model=grok-4.3
+timestamp=2026-09-02T03:18:28.603Z level=INFO run=3c90ce1b message=evaluated permission=read pattern=test_stats.py action.permission=read action.pattern=* action.action=allow
+timestamp=2026-09-02T03:18:28.613Z level=INFO run=3c90ce1b message="touching file" file=/home/user/harness-study/.dsh-run/probe-kill/workspace/test_stats.py
+timestamp=2026-09-02T03:18:28.690Z level=INFO run=3c90ce1b message=tracking hash=e95f0fc4354b42c9e8cb05dc9aea953af5c548b1 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:18:28.754Z level=INFO run=3c90ce1b message=loop session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 step=4
+timestamp=2026-09-02T03:18:28.810Z level=INFO run=3c90ce1b message=tracking hash=e95f0fc4354b42c9e8cb05dc9aea953af5c548b1 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:18:28.847Z level=INFO run=3c90ce1b message=process session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 messageID=msg_060200e95001E0jcbAwOMYONCz
+timestamp=2026-09-02T03:18:28.848Z level=INFO run=3c90ce1b message=stream providerID=xai modelID=grok-4.3 session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 small=false agent=build mode=primary
+timestamp=2026-09-02T03:18:28.850Z level=INFO run=3c90ce1b message="llm runtime selected" llm.runtime=ai-sdk llm.provider=xai llm.model=grok-4.3
+timestamp=2026-09-02T03:18:30.247Z level=INFO run=3c90ce1b message=evaluated permission=edit pattern=stats.py action.permission=* action.action=allow action.pattern=*
+timestamp=2026-09-02T03:18:30.248Z level=INFO run=3c90ce1b message=formatting file=/home/user/harness-study/.dsh-run/probe-kill/workspace/stats.py
+timestamp=2026-09-02T03:18:30.253Z level=INFO run=3c90ce1b message="touching file" file=/home/user/harness-study/.dsh-run/probe-kill/workspace/stats.py
+timestamp=2026-09-02T03:18:30.344Z level=INFO run=3c90ce1b message=tracking hash=5878d3b36c5137252937d89975230797129c0821 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:18:30.407Z level=INFO run=3c90ce1b message=loop session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 step=5
+timestamp=2026-09-02T03:18:30.483Z level=INFO run=3c90ce1b message=tracking hash=5878d3b36c5137252937d89975230797129c0821 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:18:30.522Z level=INFO run=3c90ce1b message=process session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 messageID=msg_06020150a001fszzfImeMH2HYc
+timestamp=2026-09-02T03:18:30.523Z level=INFO run=3c90ce1b message=stream providerID=xai modelID=grok-4.3 session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 small=false agent=build mode=primary
+timestamp=2026-09-02T03:18:30.542Z level=INFO run=3c90ce1b message="llm runtime selected" llm.runtime=ai-sdk llm.provider=xai llm.model=grok-4.3
+timestamp=2026-09-02T03:18:31.416Z level=INFO run=3c90ce1b message=evaluated permission=bash pattern="python3 -m unittest -v" action.permission=* action.action=allow action.pattern=*
+timestamp=2026-09-02T03:18:31.640Z level=INFO run=3c90ce1b message=tracking hash=cd1c9e67dec5c5ba64440f5e35bd4ca010d8dea8 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:18:31.714Z level=INFO run=3c90ce1b message=loop session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 step=6
+timestamp=2026-09-02T03:18:31.796Z level=INFO run=3c90ce1b message=tracking hash=cd1c9e67dec5c5ba64440f5e35bd4ca010d8dea8 cwd=/home/user/harness-study/.dsh-run/probe-kill/workspace git=/home/user/harness-study/.dsh-run/probe-kill/home/.local/share/opencode/snapshot/8c2eede07187097253b0c85f5c7c5bbf2fe6ff15/4f8e8f53a61c985b8fa708dd56ad0dceb5c8bf80
+timestamp=2026-09-02T03:18:31.863Z level=INFO run=3c90ce1b message=process session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 messageID=msg_060201a25001Eh16MSoxM5CPR7
+timestamp=2026-09-02T03:18:31.864Z level=INFO run=3c90ce1b message=stream providerID=xai modelID=grok-4.3 session.id=ses_f9fe1899cffeZO96d2zCzeDQD6 small=false agent=build mode=primary
+timestamp=2026-09-02T03:18:31.871Z level=INFO run=3c90ce1b message="llm runtime selected" llm.runtime=ai-sdk llm.provider=xai llm.model=grok-4.3

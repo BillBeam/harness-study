@@ -217,15 +217,38 @@ REPO_SCOPE: dict[str, dict] = {
             (r"^patches/", "对第三方依赖打的补丁，不是本仓库源码"),
         ],
     },
-    # Provisional: this pin has been run (study/opencode/run.md), not yet
-    # censused. The harness is the bun monorepo under `packages/` plus the
-    # root's own files; narrow it when a census is written. Declared here so
-    # that selftest's "every pin has a declared census scope" stays honest
-    # rather than because the scope has been walked.
+    # The harness is the CLI product and what it links against: `opencode`
+    # (CLI, session loop, tools, server routes), `core` (v2 core: database,
+    # tool set, runner), `tui`, `server`, `plugin`, `schema`, `protocol`,
+    # `llm`, `sdk` / `sdk-next` / `client` (the wire contract and its
+    # generated clients), `codemode`, `httpapi-codegen`, the two sqlite
+    # layers, and the root's own files. `packages/web/src/content/docs` is the
+    # shipped manual (opencode.ai/docs). Out by name: the web / desktop / app
+    # / console / storybook / session-ui / ui / stats / enterprise front ends,
+    # the `slack` bot, cloud glue (`function`, `script`, `containers`,
+    # `identity`, `cli` = the `lildax` console CLI, `infra`, `nix`, `sdks`),
+    # `artifacts/` (a marketing video), `specs/`, `github/`, and `patches/`.
     "opencode": {
-        "roots": ["packages", ""],
-        "doc_roots": [],
-        "exclude": [],
+        "roots": [
+            "packages/opencode", "packages/core", "packages/tui",
+            "packages/server", "packages/plugin", "packages/schema",
+            "packages/protocol", "packages/llm", "packages/sdk",
+            "packages/sdk-next", "packages/client", "packages/codemode",
+            "packages/httpapi-codegen", "packages/effect-drizzle-sqlite",
+            "packages/effect-sqlite-node", "packages/web/src/content/docs", "",
+        ],
+        "doc_roots": ["packages/web/src/content/docs"],
+        "exclude": [
+            # Translations of the root README and of the docs; the originals
+            # are in scope.
+            (r"^README\.[a-z]{2,3}\.md$", "译文，其原文 README.md 已在范围内"),
+            (r"^packages/web/src/content/docs/[a-z]{2}(-[a-z]{2})?/", "文档译文，其原文已在范围内"),
+            # Generated code: the SDK's `gen/`, the client's `generated*/`,
+            # and drizzle's `*.gen.ts` are outputs of files already in scope.
+            (r"^packages/sdk/js/src/gen/", "由 httpapi 定义生成，其来源已在范围内"),
+            (r"^packages/client/src/generated(-effect)?/", "由 httpapi 定义生成，其来源已在范围内"),
+            (r"\.gen\.ts$", "生成文件，其来源已在范围内"),
+        ],
     },
 }
 
